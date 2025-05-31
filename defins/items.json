@@ -1,0 +1,58 @@
+{
+  "Old Coin": {
+    "description": "An ancient, tarnished coin.",
+    "edible": false
+  },
+  "Mystic Herb": {
+    "description": "A fragrant herb with strange properties.",
+    "edible": true,
+    "heal_min": 10,
+    "heal_max": 20
+  },
+  "Iron Sword": {
+    "description": "A sturdy, well-made iron sword.",
+    "edible": false
+  },
+  "Potion": {
+    "description": "A glowing liquid that restores health.",
+    "edible": true,
+    "heal_min": 20,
+    "heal_max": 25
+  },
+  "Torch": {
+    "description": "A wooden torch, useful for dark places.",
+    "edible": false
+  },
+  "Map Piece": {
+    "description": "A fragment of an old, tattered map.",
+    "edible": false
+  },
+  "Berries": {
+    "description": "Sweet, wild berries.",
+    "edible": true,
+    "heal_min": 5,
+    "heal_max": 10
+  },
+  "Mushroom": {
+    "description": "A strangely glowing mushroom.",
+    "edible": true,
+    "heal_min": 10,
+    "heal_max": 15
+  },
+  "Ancient Amulet": {
+    "description": "A powerful amulet, pulsating with old magic.",
+    "edible": false
+  },
+  "Ancient Tome": {
+    "description": "A heavy book filled with forgotten knowledge.",
+    "edible": false
+  },
+  "Gold Bar": {
+    "description": "A shiny bar of pure gold.",
+    "edible": false
+  },
+  "Spider Silk": {
+    "description": "Strong and sticky spider silk.",
+    "edible": false
+  }
+}
