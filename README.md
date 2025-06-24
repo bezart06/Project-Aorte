@@ -33,7 +33,7 @@ You only need Python 3 installed on your system. No external libraries are requi
 
 1.  Clone the repo:
     ```sh
-    git clone [https://github.com/bezart06/Project_Aorte.git](https://github.com/bezart06/Project_Aorte.git)
+    git clone https://github.com/bezart06/Project_Aorte.git
     ```
 2.  Navigate to the project directory:
     ```sh
@@ -80,3 +80,9 @@ You can also contribute by expanding the `items.json` and `quests.json` files wi
 ## License
 
 Distributed under the MIT Licence. See `LICENSE.txt` for more information.
+
+## Wiki
+
+*(Currently in developing...)*
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bezart06/CPCD)
