@@ -77,7 +77,7 @@ def display_status(player):
 # --- Prompt & Selection Functions ---
 
 def prompt_new_or_load():
-    title = "Welcome to the ASCII RPG Adventure!"
+    title = "Welcome to the Project Aorte!"
     options = ["New Game", "Load Game"]
     choice = tui.menu(title, options)
     if choice == "New Game":

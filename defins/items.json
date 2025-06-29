@@ -54,5 +54,11 @@
   "Spider Silk": {
     "description": "Strong and sticky spider silk.",
     "edible": false
+  },
+  "Rotten Tomato": {
+    "description": "Just a rotten tomato.",
+    "edible": true,
+    "heal_min": -15,
+    "heal_max": -5
   }
 }

@@ -42,9 +42,15 @@ except ImportError:
                 return "UP"
             elif next_key == b'P':
                 return "DOWN"
+            # You could add other arrows like LEFT (b'K') and RIGHT (b'M') here if needed
+            return ""
         elif key == b'\r':
             return "ENTER"
-        return key.decode('utf-8').upper()
+
+        try:
+            return key.decode('utf-8').upper()
+        except UnicodeDecodeError:
+            return ""
 
 
 class Colors:

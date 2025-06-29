@@ -1,4 +1,4 @@
-# ver.0.1-beta
+# ver.0.1.1
 
 import random
 import sys
@@ -26,7 +26,8 @@ ITEM_DEFINITIONS = load_game_data('defins/items.json')
 
 EDIBLE_ITEMS = [item_name for item_name, props in ITEM_DEFINITIONS.items() if props.get('edible')]
 ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
-ALL_POSSIBLE_ENEMIES = ["Goblin", "Ghost", "Wolf", "Bandit", "Skeleton", "Spider", "Ogre", "Dragonling"]
+ALL_POSSIBLE_ENEMIES = ["Cave Slime", "Zombie", "Goblin", "Ghost", "Wolf", "Bandit", "Skeleton", "Spider", "Ogre",
+                        "Dragonling", "Hydra"]
 
 
 class Player:

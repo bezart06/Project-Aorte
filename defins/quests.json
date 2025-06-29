@@ -47,5 +47,14 @@
     "reward_hp": 25,
     "reward_skill": {"Strength": 1, "Agility": 1},
     "reward_item": "Spider Silk"
+  },
+  "Be a Dwarf King!": {
+    "description": "Kill the some dragonlings",
+    "type": "defeat_enemies",
+    "target_enemy": "Dragonling",
+    "target_count": 7,
+    "reward_hp": 1,
+    "reward_skill": {"Strength": 3, "Agility": 1, "Wisdom": 1},
+    "reward_item": "Dwarf Crown"
   }
 }
