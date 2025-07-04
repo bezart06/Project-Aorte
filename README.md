@@ -1,6 +1,6 @@
 # Project Aorte
 
-![Gameplay Screenshot](https://i.imgur.com/*.png) 
+[![Windows-Terminal-wg-Q9-YPJg-Hh.png](https://i.postimg.cc/XYfvcVs5/Windows-Terminal-wg-Q9-YPJg-Hh.png)](https://postimg.cc/YvSktwK2) 
 *A classic terminal-based RPG experience.*
 
 ---
