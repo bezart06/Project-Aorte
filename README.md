@@ -33,11 +33,11 @@ You only need Python 3 installed on your system. No external libraries are requi
 
 1.  Clone the repo:
     ```sh
-    git clone https://github.com/bezart06/Project_Aorte.git
+    git clone https://github.com/bezart06/Project-Aorte.git
     ```
 2.  Navigate to the project directory:
     ```sh
-    cd Project_Aorte
+    cd Project-Aorte
     ```
 3.  Run the game:
     ```sh
