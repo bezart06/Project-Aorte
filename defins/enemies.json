@@ -1,0 +1,46 @@
+{
+  "Cave Slime": {
+    "hp": 15,
+    "attack": 3
+  },
+  "Goblin": {
+    "hp": 30,
+    "attack": 5
+  },
+  "Zombie": {
+    "hp": 25,
+    "attack": 7
+  },
+  "Ghost": {
+    "hp": 25,
+    "attack": 10
+  },
+  "Wolf": {
+    "hp": 35,
+    "attack": 8
+  },
+  "Bandit": {
+    "hp": 70,
+    "attack": 10
+  },
+  "Skeleton": {
+    "hp": 40,
+    "attack": 8
+  },
+  "Spider": {
+    "hp": 30,
+    "attack": 6
+  },
+  "Ogre": {
+    "hp": 110,
+    "attack": 12
+  },
+  "Dragonling": {
+    "hp": 125,
+    "attack": 20
+  },
+  "Hydra": {
+    "hp": 200,
+    "attack": 30
+  }
+}

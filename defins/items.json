@@ -60,5 +60,37 @@
     "edible": true,
     "heal_min": -15,
     "heal_max": -5
+  },
+  "Fire Bomb": {
+    "description": "A crude explosive that deals fire damage.",
+    "edible": false,
+    "combat_usable": true,
+    "effect": {
+      "type": "damage_enemy",
+      "min": 20,
+      "max": 30
+    }
+  },
+  "Smoke Bomb": {
+    "description": "Creates a thick cloud of smoke, making you harder to hit.",
+    "edible": false,
+    "combat_usable": true,
+    "effect": {
+      "type": "buff_player",
+      "skill": "Agility",
+      "amount": 3,
+      "duration": "combat"
+    }
+  },
+  "Stone of Fortitude": {
+    "description": "A rock that glows with inner strength.",
+    "edible": false,
+    "combat_usable": true,
+    "effect": {
+      "type": "buff_player",
+      "skill": "Strength",
+      "amount": 2,
+      "duration": "combat"
+    }
   }
 }

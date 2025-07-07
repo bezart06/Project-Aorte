@@ -76,6 +76,16 @@ def display_status(player):
 
 # --- Prompt & Selection Functions ---
 
+def prompt_update(current_version, new_version):
+    title = "Update Available!"
+    header = (f"A new version of the game is available.\n\n"
+              f"  Current Version: {current_version}\n"
+              f"  Latest Version:  {new_version}\n")
+    options = ["Update Now", "Later"]
+    choice = tui.menu(title, options, header_text=header, add_cancel=False)
+    return choice == "Update Now"
+
+
 def prompt_new_or_load():
     title = "Welcome to the Project Aorte!"
     options = ["New Game", "Load Game"]
@@ -124,3 +134,33 @@ def prompt_action(player, location):
         options=actions,
         header_text=location_header
     )
+
+
+# --- Combat Interface ---
+
+def render_combat_ui(player, enemy, log, actions, selected_action_index):
+    buffer = [f"{Colors.BOLD}{Colors.BRIGHT_MAGENTA}================== COMBAT =================={Colors.ENDC}"]
+
+    # Player and Enemy status bars
+    player_hp_bar = tui.create_hp_bar(player.hp, player.max_hp, 20, Colors.BRIGHT_GREEN)
+    enemy_hp_bar = tui.create_hp_bar(enemy.hp, enemy.max_hp, 20, Colors.BRIGHT_RED)
+
+    buffer.append(f"{Colors.BOLD}{player.name:<20} {Colors.BOLD}{enemy.name:>20}{Colors.ENDC}")
+    buffer.append(f"HP: {player_hp_bar}         HP: {enemy_hp_bar}")
+    buffer.append(f"{str(player.hp)+'/'+str(player.max_hp):<20} {str(max(0, enemy.hp))+'/'+str(enemy.max_hp):>25}")
+    buffer.append(f"{Colors.BOLD}{Colors.BRIGHT_MAGENTA}------------------------------------------{Colors.ENDC}\n")
+
+    # Combat Log
+    buffer.append(f"{Colors.BOLD}{Colors.BRIGHT_YELLOW}Combat Log:{Colors.ENDC}")
+    for i in range(len(log)):
+        buffer.append(f"  {Colors.WHITE}{log[i]}{Colors.ENDC}")
+    buffer.append(f"\n{Colors.BOLD}{Colors.BRIGHT_MAGENTA}------------------ ACTIONS -----------------{Colors.ENDC}")
+
+    # Actions
+    for i, action in enumerate(actions):
+        if i == selected_action_index:
+            buffer.append(f"  {Colors.INVERSE} {action} {Colors.ENDC}")
+        else:
+            buffer.append(f"  {Colors.WHITE} {action} {Colors.ENDC}")
+
+    tui.render_from_buffer(buffer)
