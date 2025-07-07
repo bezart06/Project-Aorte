@@ -10,7 +10,7 @@ import requests
 GITHUB_REPO = "bezart06/Project-Aorte"
 
 API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-CURRENT_VERSION = "v0.2.0-beta"
+CURRENT_VERSION = "ver.0.2.0-beta"
 
 
 def get_file_hash(filepath):
