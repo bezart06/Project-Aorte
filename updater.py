@@ -3,14 +3,15 @@ import os
 import subprocess
 import sys
 import zipfile
-
-import requests
+import urllib.request
+import urllib.error
+import json
 
 # IMPORTANT
 GITHUB_REPO = "bezart06/Project-Aorte"
 
 API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-CURRENT_VERSION = "ver.0.2.0-beta"
+CURRENT_VERSION = "ver.0.2.0-beta2"
 
 
 def get_file_hash(filepath):
@@ -24,9 +25,14 @@ def get_file_hash(filepath):
 def check_for_updates():
     try:
         print("Checking for updates...")
-        response = requests.get(API_URL, timeout=10)
-        response.raise_for_status()
-        latest_version = response.json()["tag_name"]
+        with urllib.request.urlopen(API_URL, timeout=10) as response:
+            if response.status != 200:
+                print(f"Error: Data could not be retrieved (status: {response.status})")
+                return None
+
+            data = response.read()
+            latest_release = json.loads(data.decode('utf-8'))
+            latest_version = latest_release["tag_name"]
 
         if latest_version != CURRENT_VERSION:
             print(f"New version found: {latest_version}")
@@ -34,8 +40,8 @@ def check_for_updates():
         else:
             print("You are on the latest version.")
             return None
-    except requests.exceptions.RequestException as e:
-        print(f"Error checking for updates: {e}")
+    except (urllib.error.URLError, json.JSONDecodeError, KeyError) as e:
+        print(f"Error when checking for updates: {e}")
         return None
 
 
@@ -45,9 +51,12 @@ def download_and_apply_update(version):
 
     try:
         release_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{version}"
-        response = requests.get(release_url, timeout=10)
-        response.raise_for_status()
-        assets = response.json()["assets"]
+
+        with urllib.request.urlopen(release_url, timeout=10) as response:
+            if response.status != 200:
+                print(f"Error: Could not find release {version} (status: {response.status})")
+                return False
+            assets = json.loads(response.read().decode('utf-8'))["assets"]
 
         asset_url = None
         checksum_url = None
@@ -63,16 +72,12 @@ def download_and_apply_update(version):
 
         print(f"Downloading {asset_name}...")
         update_zip_path = os.path.join(os.getcwd(), asset_name)
-        with requests.get(asset_url, stream=True) as r:
-            r.raise_for_status()
-            with open(update_zip_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        with urllib.request.urlopen(asset_url) as r, open(update_zip_path, 'wb') as f:
+            f.write(r.read())
 
-        print("Downloading checksum...")
-        checksum_response = requests.get(checksum_url)
-        checksum_response.raise_for_status()
-        expected_hash = checksum_response.text.strip()
+        print("Loading the checksum...")
+        with urllib.request.urlopen(checksum_url) as response:
+            expected_hash = response.read().decode('utf-8').strip()
 
         print("Verifying download integrity...")
         downloaded_hash = get_file_hash(update_zip_path)
@@ -84,7 +89,6 @@ def download_and_apply_update(version):
         print("Download verified.")
 
         executable_path = sys.executable
-
         extract_dir = os.path.join(os.getcwd(), "update_temp")
         os.makedirs(extract_dir, exist_ok=True)
         with zipfile.ZipFile(update_zip_path, 'r') as zip_ref:

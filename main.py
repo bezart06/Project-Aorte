@@ -1,4 +1,4 @@
-# ver.0.2.0-beta
+# ver.0.2.0-beta2
 
 import random
 import sys
@@ -32,9 +32,9 @@ def load_game_data(filename):
         sys.exit(1)
 
 
-QUEST_DEFINITIONS = load_game_data('quests.json')
-ITEM_DEFINITIONS = load_game_data('items.json')
-ENEMY_DEFINITIONS = load_game_data('enemies.json')
+QUEST_DEFINITIONS = load_game_data(os.path.join('defins', 'quests.json'))
+ITEM_DEFINITIONS = load_game_data(os.path.join('defins', 'items.json'))
+ENEMY_DEFINITIONS = load_game_data(os.path.join('defins', 'enemies.json'))
 
 EDIBLE_ITEMS = [item_name for item_name, props in ITEM_DEFINITIONS.items() if props.get('edible')]
 ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
