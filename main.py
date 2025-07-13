@@ -1,4 +1,4 @@
-# ver.0.2.0-beta2
+# ver.0.2.0
 
 import random
 import sys
