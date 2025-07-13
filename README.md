@@ -14,9 +14,9 @@ The game features:
 * **Quest System:** Accept and complete quests to earn rewards and advance your character.
 * **Simple Inventory:** Find and use a variety of items, including healing herbs and powerful artifacts.
 * **Modular Codebase:** A separated interface and game logic make it easy to modify and expand.
-* **Cross-Platform:** Runs on any system with Python 3, including Windows, macOS, and Linux.
+* **Cross-Platform:** Runs on any system with Python 3, including Windows, and Linux.
 
-This project was built to be straightforward, fun, and easily extensible. All game data (items, quests) is stored in easy-to-edit `.json` files.
+This project was built to be straightforward, fun, and easily extensible. All game data (items, quests, enemies) is stored in easy-to-edit `.json` files.
 
 ---
 
@@ -52,10 +52,10 @@ Navigate the game menus using the **arrow keys** (Up/Down) and make selections w
 
 The game loop is based on exploring new areas. In each area, you can choose from a list of actions:
 * **Take an item:** If items are present, you can add one to your inventory.
-* **Fight an enemy:** If enemies are nearby, you can engage in combat. This is currently a simple exchange of damage.
+* **Fight an enemy:** If enemies are nearby, you can engage in combat.
 * **Move to a new area:** This will generate a new location and is the primary way to explore.
 * **View Status:** Check your current HP, skills, and active quests.
-* **Eat an item:** Consume an edible item from your inventory to restore health.
+* **Eat an item:** Consume an edible item from your inventory to restore or loss health.
 * **View Quests:** See a list of available quests and accept new ones.
 * **Save/Quit:** Save your progress or exit the game.
 
@@ -73,7 +73,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 4.  **Push to the Branch** (`git push origin feature/AmazingFeature`)
 5.  **Open a Pull Request**
 
-You can also contribute by expanding the `items.json` and `quests.json` files with new content!
+You can also contribute by expanding the `items.json`, `quests.json` and `enemies.json` files with new content!
 
 ---
 
