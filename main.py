@@ -465,6 +465,7 @@ def explore(player):
 
 
 def main():
+    handle_updates()
     player = None
     interface.tui.clear_screen()
 
