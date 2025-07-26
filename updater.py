@@ -1,54 +1,92 @@
-import hashlib
+import json
 import os
+import shutil
 import subprocess
 import sys
-import zipfile
-import urllib.request
+import time
 import urllib.error
-import json
+import urllib.request
+import zipfile
 
 # IMPORTANT
 GITHUB_REPO = "bezart06/Project-Aorte"
 
-API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-CURRENT_VERSION = "ver.0.2.0"
+API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
+CURRENT_VERSION = "ver.0.2.1"
 
 
-def get_file_hash(filepath):
-    sha256_hash = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
+def parse_to_comparable(version_str):
+    """
+    Handles 'ver.X.Y.Z' and 'ver.X.Y.Z-hotfix' style tags.
+    A post-release tag ('-hotfix') makes the version higher than one without it.
+    Example: ('ver.1.2.3-hotfix') -> ((1, 2, 3), 1)
+             ('ver.1.2.3')        -> ((1, 2, 3), 0)
+    This ensures ( (1,2,3), 1 ) > ( (1,2,3), 0 ) is true.
+    """
+    if not isinstance(version_str, str):
+        return None
+
+    if version_str.startswith("ver."):
+        version_str = version_str[4:]
+
+    # Separate main version from post-release tags (e.g., -hotfix)
+    parts = version_str.split('-', 1)
+    main_version_str = parts[0]
+    post_release_marker = 1 if len(parts) > 1 else 0
+
+    try:
+        release_tuple = tuple(map(int, main_version_str.split('.')))
+        return release_tuple, post_release_marker
+    except (ValueError, TypeError):
+        return None
 
 
 def check_for_updates():
+    """
+    Fetches all releases, filters out pre-releases, and finds the latest stable version
+    that is newer than the current version, including hotfixes.
+    """
     try:
         print("Checking for updates...")
         with urllib.request.urlopen(API_URL, timeout=10) as response:
             if response.status != 200:
                 print(f"Error: Data could not be retrieved (status: {response.status})")
                 return None
+            all_releases = json.loads(response.read().decode('utf-8'))
 
-            data = response.read()
-            latest_release = json.loads(data.decode('utf-8'))
-            latest_version = latest_release["tag_name"]
+        latest_stable_release = None
+        current_v_comparable = parse_to_comparable(CURRENT_VERSION)
 
-        if latest_version != CURRENT_VERSION:
-            print(f"New version found: {latest_version}")
-            return latest_version
+        if not current_v_comparable:
+            print(f"Error: Current version '{CURRENT_VERSION}' is in an invalid format.")
+            return None
+
+        highest_v_comparable = current_v_comparable
+
+        for release in all_releases:
+            if release.get("draft", False) or release.get("prerelease", False):
+                continue
+
+            tag_name = release.get("tag_name")
+            release_v_comparable = parse_to_comparable(tag_name)
+
+            if release_v_comparable and release_v_comparable > highest_v_comparable:
+                highest_v_comparable = release_v_comparable
+                latest_stable_release = tag_name
+
+        if latest_stable_release:
+            print(f"New version found: {latest_stable_release}")
+            return latest_stable_release
         else:
             print("You are on the latest version.")
             return None
+
     except (urllib.error.URLError, json.JSONDecodeError, KeyError) as e:
         print(f"Error when checking for updates: {e}")
         return None
 
 
 def download_and_apply_update(version):
-    platform = "windows" if sys.platform == "win32" else "unix"
-    asset_name = f"aorte_{platform}.zip"
-
     try:
         release_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{version}"
 
@@ -56,85 +94,78 @@ def download_and_apply_update(version):
             if response.status != 200:
                 print(f"Error: Could not find release {version} (status: {response.status})")
                 return False
-            assets = json.loads(response.read().decode('utf-8'))["assets"]
+            release_data = json.loads(response.read().decode('utf-8'))
 
-        asset_url = None
-        checksum_url = None
-        for asset in assets:
-            if asset['name'] == asset_name:
-                asset_url = asset['browser_download_url']
-            if asset['name'] == f"{asset_name}.sha256":
-                checksum_url = asset['browser_download_url']
-
-        if not asset_url or not checksum_url:
-            print(f"Could not find release assets for {version} on platform {platform}.")
+        zip_url = release_data.get("zipball_url")
+        if not zip_url:
+            print(f"Could not find source code zip for version {version}.")
             return False
 
-        print(f"Downloading {asset_name}...")
-        update_zip_path = os.path.join(os.getcwd(), asset_name)
-        with urllib.request.urlopen(asset_url) as r, open(update_zip_path, 'wb') as f:
+        print(f"Downloading source from {zip_url}...")
+        update_zip_path = os.path.join(os.getcwd(), f"update_{version}.zip")
+
+        req = urllib.request.Request(zip_url, headers={'User-Agent': 'Project-Aorte-Updater'})
+        with urllib.request.urlopen(req) as r, open(update_zip_path, 'wb') as f:
             f.write(r.read())
 
-        print("Loading the checksum...")
-        with urllib.request.urlopen(checksum_url) as response:
-            expected_hash = response.read().decode('utf-8').strip()
+        print("Download verified. Preparing to update...")
 
-        print("Verifying download integrity...")
-        downloaded_hash = get_file_hash(update_zip_path)
-        if downloaded_hash != expected_hash:
-            print("Error: Checksum mismatch. The downloaded file may be corrupt.")
-            os.remove(update_zip_path)
-            return False
+        app_root_dir = os.getcwd()
+        extract_dir = os.path.join(app_root_dir, "update_temp")
 
-        print("Download verified.")
-
-        executable_path = sys.executable
-        extract_dir = os.path.join(os.getcwd(), "update_temp")
+        if os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir)
         os.makedirs(extract_dir, exist_ok=True)
+
         with zipfile.ZipFile(update_zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
 
-        new_executable_name = os.path.basename(executable_path)
-        new_executable_path = os.path.join(extract_dir, new_executable_name)
+        time.sleep(1)
+        extracted_folder_name = os.listdir(extract_dir)[0]
+        update_source_path = os.path.join(extract_dir, extracted_folder_name)
 
-        if not os.path.exists(new_executable_path):
-            print(f"Error: Extracted executable not found at {new_executable_path}")
-            return False
+        main_script = sys.argv[0]
+        restart_cmd = f"\"{sys.executable}\" \"{os.path.join(app_root_dir, main_script)}\""
 
-        if platform == "windows":
-            script_path = os.path.join(os.getcwd(), "update.bat")
+        if sys.platform == "win32":
+            script_path = os.path.join(app_root_dir, "update.bat")
             with open(script_path, "w") as f:
                 f.write("@echo off\n")
                 f.write("echo Waiting for application to close...\n")
                 f.write("timeout /t 2 /nobreak > NUL\n")
-                f.write(f"move /Y \"{new_executable_path}\" \"{executable_path}\"\n")
+                f.write(f"echo Copying new files...\n")
+                f.write(f"xcopy /E /Y \"{update_source_path}\" \"{app_root_dir}\" > NUL\n")
                 f.write("echo Update complete! Starting new version...\n")
-                f.write(f"start \"\" \"{executable_path}\"\n")
+                f.write(f"start \"Project Aorte\" {restart_cmd}\n")
                 f.write(f"rd /s /q \"{extract_dir}\"\n")
                 f.write(f"del \"{update_zip_path}\"\n")
                 f.write("(goto) 2>nul & del \"%~f0\"\n")
-            subprocess.Popen(script_path, shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
-        else:  # Unix
-            script_path = os.path.join(os.getcwd(), "update.sh")
+            subprocess.Popen(script_path, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            script_path = os.path.join(app_root_dir, "update.sh")
             with open(script_path, "w") as f:
                 f.write("#!/bin/bash\n")
                 f.write("echo \"Waiting for application to close...\"\n")
                 f.write("sleep 2\n")
-                f.write(f"mv -f \"{new_executable_path}\" \"{executable_path}\"\n")
+                f.write(f"echo \"Copying new files...\"\n")
+                f.write(f"cp -R \"{update_source_path}/.\" \"{app_root_dir}/\"\n")
                 f.write("echo \"Update complete! Starting new version...\"\n")
-                f.write(f"chmod +x \"{executable_path}\"\n")
-                f.write(f"\"{executable_path}\" &\n")
+                f.write(f"{restart_cmd} &\n")
                 f.write(f"rm -rf \"{extract_dir}\"\n")
                 f.write(f"rm -f \"{update_zip_path}\"\n")
-                f.write(f"rm -- \"$0\"\n")
+                f.write("rm -- \"$0\"\n")
             os.chmod(script_path, 0o755)
-            subprocess.Popen([script_path], shell=True)
+            subprocess.Popen([script_path])
 
         print("Update script created. The application will now close.")
         sys.exit(0)
 
     except Exception as e:
         print(f"An error occurred during the update process: {e}")
+        if 'extract_dir' in locals() and os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir)
+        if 'update_zip_path' in locals() and os.path.exists(update_zip_path):
+            os.remove(update_zip_path)
         return False
 
 
