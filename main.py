@@ -1,4 +1,4 @@
-# ver.0.2.0
+# ver.0.2.1
 
 import random
 import sys
@@ -38,6 +38,8 @@ ENEMY_DEFINITIONS = load_game_data(os.path.join('defins', 'enemies.json'))
 
 EDIBLE_ITEMS = [item_name for item_name, props in ITEM_DEFINITIONS.items() if props.get('edible')]
 ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
+# NEW: Create a list of items that can be spawned in locations
+SPAWNABLE_ITEMS = [name for name, props in ITEM_DEFINITIONS.items() if props.get("spawnable", True)]
 ALL_POSSIBLE_ENEMIES = list(ENEMY_DEFINITIONS.keys())
 
 
@@ -129,6 +131,7 @@ class Enemy:
         self.hp = enemy_data['hp']
         self.max_hp = enemy_data['hp']
         self.attack = enemy_data['attack']
+        self.drops = enemy_data.get('drops', [])
 
 
 class Location:
@@ -145,7 +148,10 @@ def generate_location():
     name = f"{random.choice(prefixes)} {random.choice(places)}"
     description = f"This {name} holds secrets lost in time. The air is thick with mystery and the scent of damp earth."
 
-    items_to_add = random.sample(ALL_POSSIBLE_ITEMS, k=random.randint(1, min(3, len(ALL_POSSIBLE_ITEMS))))
+    items_to_add = []
+    if SPAWNABLE_ITEMS:
+        items_to_add = random.sample(SPAWNABLE_ITEMS, k=random.randint(1, min(3, len(SPAWNABLE_ITEMS))))
+
     enemies_to_add = random.sample(ALL_POSSIBLE_ENEMIES, k=random.randint(0, min(2, len(ALL_POSSIBLE_ENEMIES))))
 
     return Location(name, description, items_to_add, enemies_to_add)
@@ -238,6 +244,14 @@ def combat(player, enemy_name):
 
             if enemy.hp <= 0:
                 add_log(f"The {enemy.name} is defeated!")
+                for drop in enemy.drops:
+                    if random.randint(1, 100) <= drop['chance']:
+                        item_name = drop['item']
+                        player.inventory.append(item_name)
+                        add_log(f"The {enemy.name} dropped a {item_name}!")
+                        player.items_gathered[item_name] = player.items_gathered.get(item_name, 0) + 1
+                interface.render_combat_ui(player, enemy, combat_log, actions, selected_action_index)
+                time.sleep(5)
                 return True
 
             if not turn_ended:
@@ -320,9 +334,21 @@ def check_and_complete_quests(player):
                         interface.display_message(f"  Your {skill} increased by {value}!",
                                                   interface.Colors.BRIGHT_CYAN)
             if 'reward_item' in quest_def:
-                player.inventory.append(quest_def['reward_item'])
-                interface.display_message(f"  You received {quest_def['reward_item']}!",
+                reward_item_name = quest_def['reward_item']
+                player.inventory.append(reward_item_name)
+                interface.display_message(f"  You received {reward_item_name}!",
                                           interface.Colors.BRIGHT_GREEN)
+
+                item_def = ITEM_DEFINITIONS.get(reward_item_name, {})
+                if 'permanent_effect' in item_def:
+                    effect = item_def['permanent_effect']
+                    if 'max_hp_increase' in effect:
+                        increase = effect['max_hp_increase']
+                        player.max_hp += increase
+                        player.hp += increase
+                        interface.display_message(f"  Your maximum HP has permanently increased by {increase}!",
+                                                  f"{interface.Colors.BOLD}{interface.Colors.BRIGHT_MAGENTA}")
+
 
             player.completed_quests.append(quest_name)
             quests_to_remove.append(quest_name)

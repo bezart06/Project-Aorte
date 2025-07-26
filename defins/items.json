@@ -6,8 +6,8 @@
   "Mystic Herb": {
     "description": "A fragrant herb with strange properties.",
     "edible": true,
-    "heal_min": 10,
-    "heal_max": 20
+    "heal_min": 12,
+    "heal_max": 16
   },
   "Iron Sword": {
     "description": "A sturdy, well-made iron sword.",
@@ -41,11 +41,13 @@
   },
   "Ancient Amulet": {
     "description": "A powerful amulet, pulsating with old magic.",
-    "edible": false
+    "edible": false,
+    "spawnable": false
   },
   "Ancient Tome": {
     "description": "A heavy book filled with forgotten knowledge.",
-    "edible": false
+    "edible": false,
+    "spawnable": false
   },
   "Gold Bar": {
     "description": "A shiny bar of pure gold.",
@@ -92,5 +94,54 @@
       "amount": 2,
       "duration": "combat"
     }
+  },
+  "Traveler's Rations": {
+    "description": "A simple but filling meal for a long journey.",
+    "edible": true,
+    "heal_min": 15,
+    "heal_max": 20
+  },
+  "Whetstone": {
+    "description": "A rough stone used to sharpen a blade.",
+    "edible": false,
+    "combat_usable": true,
+    "effect": {
+      "type": "buff_player",
+      "skill": "Strength",
+      "amount": 1,
+      "duration": "combat"
+    }
+  },
+  "Lucky Charm": {
+    "description": "A small, four-leaf clover pressed in wax.",
+    "edible": false,
+    "spawnable": false
+  },
+  "Goblin Totem": {
+    "description": "A crude totem made of bone and feathers.",
+    "edible": false,
+    "spawnable": false
+  },
+  "Shadow Fern": {
+    "description": "A rare fern that grows only in places untouched by sunlight.",
+    "edible": false
+  },
+  "Heartstone of Endurance": {
+    "description": "A crystal that pulses with a steady, life-giving rhythm.",
+    "edible": false,
+    "spawnable": false,
+    "permanent_effect": {
+      "max_hp_increase": 20
+    }
+  },
+  "Dire Wolf Pelt": {
+    "description": "The thick, durable pelt of a Dire Wolf. Could be useful for crafting.",
+    "edible": false,
+    "spawnable": false
+  },
+  "Dwarf Crown": {
+    "description": "A crown fit for a dwarf king, heavy and ornate.",
+    "edible": false,
+    "spawnable": false
   }
 }

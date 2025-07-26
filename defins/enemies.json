@@ -29,7 +29,10 @@
   },
   "Spider": {
     "hp": 30,
-    "attack": 6
+    "attack": 6,
+    "drops": [
+      {"item": "Spider Silk", "chance": 35}
+    ]
   },
   "Ogre": {
     "hp": 110,
@@ -41,6 +44,27 @@
   },
   "Hydra": {
     "hp": 200,
-    "attack": 30
+    "attack": 25
+  },
+  "Dire Wolf": {
+    "hp": 80,
+    "attack": 15,
+    "drops": [
+      {"item": "Dire Wolf Pelt", "chance": 40}
+    ]
+  },
+  "Goblin Shaman": {
+    "hp": 40,
+    "attack": 10,
+    "drops": [
+      {"item": "Goblin Totem", "chance": 75}
+    ]
+  },
+  "Whispering Shade": {
+    "hp": 30,
+    "attack": 12,
+    "drops": [
+      {"item": "Shadow Fern", "chance": 15}
+    ]
   }
 }

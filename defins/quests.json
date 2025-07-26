@@ -56,5 +56,31 @@
     "reward_hp": 1,
     "reward_skill": {"Strength": 3, "Agility": 1, "Wisdom": 1},
     "reward_item": "Dwarf Crown"
+  },
+  "A First Step": {
+    "description": "A friendly traveler mentioned that having rations is key to survival. Find one to be better prepared.",
+    "type": "gather_items",
+    "target_item": "Traveler's Rations",
+    "target_count": 1,
+    "reward_hp": 5,
+    "reward_item": "Lucky Charm"
+  },
+  "The Shaman's Power": {
+    "description": "The goblins have been empowered by a shaman. Defeat 2 Goblin Shamans.",
+    "type": "defeat_enemies",
+    "target_enemy": "Goblin Shaman",
+    "target_count": 2,
+    "reward_hp": 15,
+    "reward_skill": {"Wisdom": 1},
+    "reward_item": "Gold Bar"
+  },
+  "The Heart of the Mountain": {
+    "description": "Legends speak of Heartstone that can something. It guarded by ferocious Dire Wolves. Defeat 3 of them.",
+    "type": "defeat_enemies",
+    "target_enemy": "Dire Wolf",
+    "target_count": 3,
+    "reward_hp": 50,
+    "reward_skill": {"Strength": 2},
+    "reward_item": "Heartstone of Endurance"
   }
 }
