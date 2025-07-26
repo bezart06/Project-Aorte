@@ -2,7 +2,7 @@
 *This roadmap is broken into four major updates, each with a clear theme and a set of features that progressively enrich 
 the game.*
 
-### v0.2 — The Combat & Skills Update (Late August 2025)
+### v0.2 — The Combat & Skills Update + CEP (Late July 2025)
 This update focuses on making combat the engaging, central pillar of the game and giving meaning to the player's skills.
 
 1. **Combat Mechanics Overhaul** - Replace the simple damage exchange with a stat-based system. 
@@ -16,11 +16,11 @@ With combat improved, this phase will make the world feel more alive, persistent
 
 1. **Central Hub & NPCs** - Introduce a persistent or procedural town/location that the player can return to. 
 This area will house some new NPCs.
-2. **Merchant & Economy System** - Add a merchant NPC in the hub who buys and sells items. 
-Introduce a currency.
-3. **Expanded Quests & New Quest Types** - Introduce a many new quest types that leverage the new world system.
+2. **Merchant System** - Add a merchant NPC in the hub who buys and sells items. 
+3. **Economy System** - Introduce a currency.
+4. **Expanded Quests & New Quest Types** - Introduce a many new quest types that leverage the new world system. _(Maybe would be intoduce like CEP)_
 
-### v0.4 — The Equipment & Crafting Update (Winter 2026)
+### v0.4 — The Equipment & Crafting Update (X-mas 2026)
 This update focuses on deepening character customization through a robust equipment and crafting system.
 
 1. **Equipment System** - Allow the player to equip items into specific slots (e.g. Weapons, Armor, Amulets)
