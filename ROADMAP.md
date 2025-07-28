@@ -2,7 +2,7 @@
 *This roadmap is broken into four major updates, each with a clear theme and a set of features that progressively enrich 
 the game.*
 
-### v0.2 — The Combat & Skills Update + CEP (Late July 2025)
+### v0.2 — The Combat & Skills Update + CEP (28.07.2025)
 This update focuses on making combat the engaging, central pillar of the game and giving meaning to the player's skills.
 
 1. **Combat Mechanics Overhaul** - Replace the simple damage exchange with a stat-based system. 
