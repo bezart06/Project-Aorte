@@ -192,7 +192,7 @@ class _ColorScheme:
             self.BRIGHT_CYAN = '\033[96m'
             self.BRIGHT_GREEN = '\033[92m'
             self.BRIGHT_YELLOW = '\033[93m'
-            self.BRIGHT_RED = '\031m'
+            self.BRIGHT_RED = '\033[91m'
 
             self.BLUE = '\033[34m'
             self.GREEN = '\033[32m'
