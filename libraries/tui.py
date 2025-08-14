@@ -4,11 +4,96 @@
 import os
 import sys
 import time
+import subprocess
+
+# The TUI now attempts to automatically detect the terminal theme.
+# It checks OS-level settings first, then falls back to environment variables.
+#
+# You can still manually override the theme by setting 'TERMINAL_THEME':
+# On Linux:
+#   export TERMINAL_THEME='light'
+#
+# On Windows (CMD):
+#   set TERMINAL_THEME=light
+
+
+def _get_linux_de_theme():
+    de_checks = [
+        {
+            "command": ['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'],
+            "parser": lambda out: 'light' if 'light' in out else ('dark' if 'dark' in out else None)
+        },
+        {
+            "command": ['gsettings', 'get', 'org.cinnamon.desktop.interface', 'gtk-theme'],
+            "parser": lambda out: 'dark' if 'dark' in out or 'black' in out else None
+        },
+        {
+            "command": ['gsettings', 'get', 'org.mate.interface', 'gtk-theme'],
+            "parser": lambda out: 'dark' if 'dark' in out or 'black' in out else None
+        },
+        {
+            "command": ['kreadconfig5', '--group', 'General', '--key', 'ColorScheme'],
+            "parser": lambda out: 'dark' if 'dark' in out else None
+        },
+        {
+            "command": ['xfconf-query', '-c', 'xsettings', '-p', '/Net/ThemeName'],
+            "parser": lambda out: 'dark' if 'dark' in out else None
+        }
+    ]
+
+    for check in de_checks:
+        try:
+            result = subprocess.run(check["command"],
+                                    capture_output=True, text=True, check=False).stdout.strip().lower()
+            if result:
+                theme = check["parser"](result)
+                if theme:
+                    return theme
+        except (FileNotFoundError, subprocess.SubprocessError):
+            continue
+
+    return None
+
+
+def _detect_terminal_theme():
+    """
+    Automatically detect the terminal background theme.
+    Returns 'light' or 'dark'.
+    Detection Order:
+    1. Manual override via TERMINAL_THEME environment variable.
+    2. Platform-specific OS settings (Windows, or various Linux DEs).
+    3. Fallback to a default of 'dark'.
+    """
+    # 1. Manual Override (highest priority)
+    manual_theme = os.getenv('TERMINAL_THEME', '').lower()
+    if manual_theme in ['light', 'dark']:
+        return manual_theme
+
+    # 2. Platform-specific detection
+    platform = sys.platform
+    try:
+        if platform == "win32":
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                 r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
+            if winreg.QueryValueEx(key, 'AppsUseLightTheme')[0] == 1:
+                return 'light'
+        elif platform.startswith("linux"):
+            theme = _get_linux_de_theme()
+            if theme:
+                return theme
+
+    except (ImportError, FileNotFoundError, OSError, subprocess.SubprocessError):
+        pass
+
+    return 'dark'
+
 
 # Platform-specific key capture
 try:
     import tty
     import termios
+
     _original_termios = None
 
     def init_tui():
@@ -61,7 +146,6 @@ except ImportError:
                 return "UP"
             elif next_key == b'P':
                 return "DOWN"
-            # You could add other arrows like LEFT (b'K') and RIGHT (b'M') here if needed
             return ""
         elif key == b'\r':
             return "ENTER"
@@ -72,29 +156,57 @@ except ImportError:
             return ""
 
 
-class Colors:
-    BRIGHT_MAGENTA = '\033[95m'
-    BRIGHT_BLUE = '\033[94m'
-    BRIGHT_CYAN = '\033[96m'
-    BRIGHT_GREEN = '\033[92m'
-    BRIGHT_YELLOW = '\033[93m'
-    BRIGHT_RED = '\033[91m'
-
-    BLUE = '\033[34m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    RED = '\033[31m'
-    MAGENTA = '\033[35m'
-    CYAN = '\033[36m'
-    WHITE = '\033[37m'
-
-    BLACK_BG = '\033[40m'
-    WHITE_FG = '\033[37m'
-    INVERSE = '\033[7m'
-
+class _ColorScheme:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    INVERSE = '\033[7m'
+
+    def __init__(self, light_mode=False):
+        """
+        Initialize the color palette based on the selected theme.
+        Args:
+            light_mode (bool): If True, use colors suitable for light backgrounds.
+        """
+        if light_mode:
+            self.BRIGHT_MAGENTA = '\033[35m'
+            self.BRIGHT_BLUE = '\033[34m'
+            self.BRIGHT_CYAN = '\033[36m'
+            self.BRIGHT_GREEN = '\033[32m'
+            self.BRIGHT_YELLOW = '\033[33m'
+            self.BRIGHT_RED = '\033[31m'
+
+            self.BLUE = '\033[34m'
+            self.GREEN = '\033[32m'
+            self.YELLOW = '\033[33m'
+            self.RED = '\033[31m'
+            self.MAGENTA = '\033[35m'
+            self.CYAN = '\033[36m'
+            self.WHITE = '\033[30m'
+
+            self.BLACK_BG = '\033[47m'
+            self.WHITE_FG = '\033[30m'
+        else:
+            self.BRIGHT_MAGENTA = '\033[95m'
+            self.BRIGHT_BLUE = '\033[94m'
+            self.BRIGHT_CYAN = '\033[96m'
+            self.BRIGHT_GREEN = '\033[92m'
+            self.BRIGHT_YELLOW = '\033[93m'
+            self.BRIGHT_RED = '\031m'
+
+            self.BLUE = '\033[34m'
+            self.GREEN = '\033[32m'
+            self.YELLOW = '\033[33m'
+            self.RED = '\033[31m'
+            self.MAGENTA = '\033[35m'
+            self.CYAN = '\033[36m'
+            self.WHITE = '\033[37m'
+
+            self.BLACK_BG = '\033[40m'
+            self.WHITE_FG = '\033[37m'
+
+
+Colors = _ColorScheme(light_mode=(_detect_terminal_theme() == 'light'))
 
 
 def clear_screen():
@@ -118,6 +230,7 @@ def menu(title, options, prompt="Use arrow keys to navigate, Enter to select.", 
         options (list): A list of strings representing the choices.
         prompt (str): A help message displayed below the options.
         header_text (str): Optional multi-line text to display above the title.
+        add_cancel (bool): If true, adds a 'Q' to quit option.
 
     Returns:
         str: The selected option string, or None if the menu is exited.

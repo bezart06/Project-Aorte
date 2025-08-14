@@ -1,4 +1,4 @@
-# ver.0.2.1
+# ver.0.2.2
 
 import random
 import sys
@@ -38,7 +38,6 @@ ENEMY_DEFINITIONS = load_game_data(os.path.join('defins', 'enemies.json'))
 
 EDIBLE_ITEMS = [item_name for item_name, props in ITEM_DEFINITIONS.items() if props.get('edible')]
 ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
-# NEW: Create a list of items that can be spawned in locations
 SPAWNABLE_ITEMS = [name for name, props in ITEM_DEFINITIONS.items() if props.get("spawnable", True)]
 ALL_POSSIBLE_ENEMIES = list(ENEMY_DEFINITIONS.keys())
 
