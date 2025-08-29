@@ -150,7 +150,7 @@ def download_and_apply_update(version):
                 f.write(f"echo \"Copying new files...\"\n")
                 f.write(f"cp -R \"{update_source_path}/.\" \"{app_root_dir}/\"\n")
                 f.write("echo \"Update complete! Starting new version...\"\n")
-                f.write(f"{restart_cmd} &\n")
+                f.write(f"{restart_cmd}\n")
                 f.write(f"rm -rf \"{extract_dir}\"\n")
                 f.write(f"rm -f \"{update_zip_path}\"\n")
                 f.write("rm -- \"$0\"\n")

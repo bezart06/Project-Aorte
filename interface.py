@@ -39,9 +39,11 @@ def format_location(location):
 
     lines.append("")
     if location.items:
-        lines.append(f"  You see: {Colors.BRIGHT_GREEN}{', '.join(location.items)}{Colors.ENDC}")
+        colored_items = [f"{Colors.BRIGHT_GREEN}{item}{Colors.ENDC}" for item in location.items]
+        lines.append(f"  You see: {', '.join(colored_items)}")
     if location.enemies:
-        lines.append(f"  Danger nearby: {Colors.BRIGHT_RED}{', '.join(location.enemies)}{Colors.ENDC}")
+        colored_enemies = [f"{Colors.BRIGHT_RED}{enemy}{Colors.ENDC}" for enemy in location.enemies]
+        lines.append(f"  Danger nearby: {', '.join(colored_enemies)}")
 
     # Create a consistent underline based on the location name length
     underline = '-' * (len(location.name) + 6)
