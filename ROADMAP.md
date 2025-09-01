@@ -18,7 +18,7 @@ This update focused on making combat the engaging, central pillar of the game an
 ### v0.3 — The World & Lore Update (Target: Fall 2025)
 With combat improved, this phase will make the world feel more alive, persistent, and worth exploring.
 
-- [ ] **Central Hub & NPCs:** Introduce a persistent town/location that the player can return to, housing friendly NPCs.
+- [x] **Central Hub & NPCs:** Introduce a persistent town/location that the player can return to, housing friendly NPCs.
 - [ ] **Merchant System:** Add a merchant NPC in the hub who buys and sells items.
 - [ ] **Economy System:** Introduce a currency for transactions.
 - [ ] **Expanded Quests:** Add new quest types that leverage the hub world and NPCs (e.g., fetch quests, escort missions).
