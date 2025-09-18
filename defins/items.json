@@ -1,67 +1,82 @@
 {
   "Old Coin": {
     "description": "An ancient, tarnished coin.",
-    "edible": false
+    "edible": false,
+    "value": 10
   },
   "Mystic Herb": {
     "description": "A fragrant herb with strange properties.",
     "edible": true,
     "heal_min": 12,
-    "heal_max": 16
+    "heal_max": 16,
+    "value": 20
   },
   "Iron Sword": {
     "description": "A sturdy, well-made iron sword.",
-    "edible": false
+    "edible": false,
+    "value": 100
   },
   "Potion": {
     "description": "A glowing liquid that restores health.",
     "edible": true,
     "heal_min": 20,
-    "heal_max": 25
+    "heal_max": 25,
+    "value": 45
   },
   "Torch": {
     "description": "A wooden torch, useful for dark places.",
-    "edible": false
+    "edible": false,
+    "value": 8
   },
   "Map Piece": {
     "description": "A fragment of an old, tattered map.",
-    "edible": false
+    "edible": false,
+    "value": 30
   },
   "Berries": {
     "description": "Sweet, wild berries.",
     "edible": true,
     "heal_min": 5,
-    "heal_max": 10
+    "heal_max": 10,
+    "value": 4
   },
   "Mushroom": {
     "description": "A strangely glowing mushroom.",
     "edible": true,
     "heal_min": 10,
-    "heal_max": 15
+    "heal_max": 15,
+    "value": 6
   },
   "Ancient Amulet": {
     "description": "A powerful amulet, pulsating with old magic.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 300,
+    "quest_item": true
   },
   "Ancient Tome": {
     "description": "A heavy book filled with forgotten knowledge.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 750,
+    "quest_item": true
   },
   "Gold Bar": {
     "description": "A shiny bar of pure gold.",
-    "edible": false
+    "edible": false,
+    "value": 100
   },
   "Spider Silk": {
     "description": "Strong and sticky spider silk.",
-    "edible": false
+    "edible": false,
+    "value": 10
   },
   "Rotten Tomato": {
     "description": "Just a rotten tomato.",
     "edible": true,
     "heal_min": -15,
-    "heal_max": -5
+    "heal_max": -5,
+    "value": 1
   },
   "Fire Bomb": {
     "description": "A crude explosive that deals fire damage.",
@@ -71,7 +86,8 @@
       "type": "damage_enemy",
       "min": 20,
       "max": 30
-    }
+    },
+    "value": 40
   },
   "Smoke Bomb": {
     "description": "Creates a thick cloud of smoke, making you harder to hit.",
@@ -82,7 +98,8 @@
       "skill": "Agility",
       "amount": 3,
       "duration": "combat"
-    }
+    },
+    "value": 60
   },
   "Stone of Fortitude": {
     "description": "A rock that glows with inner strength.",
@@ -93,13 +110,15 @@
       "skill": "Strength",
       "amount": 2,
       "duration": "combat"
-    }
+    },
+    "value": 90
   },
   "Traveler's Rations": {
     "description": "A simple but filling meal for a long journey.",
     "edible": true,
     "heal_min": 15,
-    "heal_max": 20
+    "heal_max": 20,
+    "value": 20
   },
   "Whetstone": {
     "description": "A rough stone used to sharpen a blade.",
@@ -110,21 +129,25 @@
       "skill": "Strength",
       "amount": 1,
       "duration": "combat"
-    }
+    },
+    "value": 25
   },
   "Lucky Charm": {
     "description": "A small, four-leaf clover pressed in wax.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 66
   },
   "Goblin Totem": {
     "description": "A crude totem made of bone and feathers.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 42
   },
   "Shadow Fern": {
     "description": "A rare fern that grows only in places untouched by sunlight.",
-    "edible": false
+    "edible": false,
+    "value": 25
   },
   "Heartstone of Endurance": {
     "description": "A crystal that pulses with a steady, life-giving rhythm.",
@@ -132,16 +155,21 @@
     "spawnable": false,
     "permanent_effect": {
       "max_hp_increase": 20
-    }
+    },
+    "value": 2000,
+    "quest_item": true
   },
   "Dire Wolf Pelt": {
     "description": "The thick, durable pelt of a Dire Wolf. Could be useful for crafting.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 60
   },
   "Dwarf Crown": {
     "description": "A crown fit for a dwarf king, heavy and ornate.",
     "edible": false,
-    "spawnable": false
+    "spawnable": false,
+    "value": 1500,
+    "quest_item": true
   }
 }

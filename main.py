@@ -1,4 +1,4 @@
-# ver.0.2.2
+# ver.0.3.0-alpha2
 
 import random
 import sys
@@ -41,15 +41,98 @@ ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
 SPAWNABLE_ITEMS = [name for name, props in ITEM_DEFINITIONS.items() if props.get("spawnable", True)]
 ALL_POSSIBLE_ENEMIES = list(ENEMY_DEFINITIONS.keys())
 
+SAFE_LOCATIONS = {
+    "Aberfeld": {
+        "description": "A bustling town, a rare bastion of safety against the encroaching wilds.",
+        "entry_point": "Town Gates",
+        "sub_locations": {
+            "Town Gates": {
+                "description": "Massive oak gates reinforced with iron stand as the main entrance to Aberfeld. "
+                               "Guards in city livery watch all who come and go with sharp eyes.",
+                "npcs": ["Vigilant Guard"],
+            },
+            "Market Square": {
+                "description": "The heart of the town, filled with the shouts of merchants, "
+                               "the smells of fresh produce, and the clang of a nearby hammer on steel.",
+                "npcs": ["Traveling Merchant", "Local Blacksmith"],
+            },
+            "The Rusty Flagon Inn": {
+                "description": "A cozy inn, smelling of ale, roasting meat, and old wood. "
+                               "A place to rest weary bones and listen for rumors.",
+                "npcs": ["Innkeeper"],
+            }
+        }
+    }
+}
+
+RARE_LOCATIONS = {
+    "Wanderer's Campfire": {
+        "description": "The embers of a small, well-kept campfire glow warmly in a sheltered clearing. "
+                       "A single figure sits by the fire, humming a low tune.",
+        "npcs": ["Old Wanderer"],
+        "items": ["Traveler's Rations"]
+    }
+}
+
+NPCS = {
+    "Vigilant Guard": {
+        "dialogue": [
+            "Welcome to Aberfeld. Keep your weapons sheathed and there'll be no trouble.",
+            "I've seen some strange creatures in the woods to the east. Be careful out there, adventurer.",
+            "The walls keep us safe, but you can still hear the howls at night. Never lets you forget what's outside."
+        ]
+    },
+    "Traveling Merchant": {
+        "dialogue": [
+            "Looking for rare goods? You've come to the right person! "
+            "My wares are the finest this side of the mountains.",
+            "I just came from the northern peaks. "
+            "It's colder than a goblin's heart up there, but the gems are worth the trip.",
+            "A word of advice: never trust a goblin, especially one that's smiling. "
+            "Usually means they've already picked your pocket."
+        ]
+    },
+    "Local Blacksmith": {
+        "dialogue": [
+            "A sturdy blade is an adventurer's best friend. Take good care of yours, and it'll take care of you.",
+            "I could forge you a legendary sword... if you brought me legendary materials, that is. "
+            "Find me a dragon's heart, and we'll talk.",
+            "This hammer has shaped more steel than you've seen in your life. It's an extension of my arm."
+        ]
+    },
+    "Innkeeper": {
+        "dialogue": [
+            "Welcome to the Rusty Flagon! Best stew in the whole region, and the ale's not bad either.",
+            "A group of adventurers passed through a few days ago, talking about some 'Tome of Ages'. "
+            "Sounded important.",
+            "Pull up a chair by the fire. You look like you've got a story or two to tell. "
+            "Or you can listen to a few of mine, for the price of a drink."
+        ]
+    },
+    "Old Wanderer": {
+        "dialogue": [
+            "Ah, another traveler. Sit, warm yourself. The road is long, and the night is full of dangers.",
+            "I've walked these lands for more years than I can count. Seen empires rise and fall to dust. "
+            "This campfire is my only constant companion.",
+            "Wisdom isn't found in books, but in the soles of your feet. Remember that."
+        ]
+    }
+}
+
+MERCHANT_NPCS = ["Traveling Merchant"]
+INNKEEPER_NPCS = ["Innkeeper"]
+MERCHANT_STOCK = ["Potion", "Torch", "Whetstone", "Fire Bomb", "Traveler's Rations"]
 
 class Player:
     def __init__(self, name="Adventurer"):
         self.name = name
         self.hp = 100
         self.max_hp = 100
+        self.silver = 10
         self.inventory = []
         self.skills = {"Strength": 5, "Agility": 4, "Wisdom": 3}
         self.location = "Mystic Forest"
+        self.current_sub_location = None
         self.current_quests = []
         self.completed_quests = []
         self.enemies_defeated = {}
@@ -111,6 +194,8 @@ class Player:
     def from_dict(cls, data):
         player = cls(data['name'])
         player.__dict__.update(data)
+        if 'silver' not in player.__dict__:
+            player.silver = 0
         if 'Strength' not in player.skills:
             player.skills['Strength'] = 5
         if 'Agility' not in player.skills:
@@ -119,6 +204,8 @@ class Player:
             player.skills['Wisdom'] = 3
         if 'has_wisdom_buff' not in data:
             player.has_wisdom_buff = False
+        if 'current_sub_location' not in data:
+            player.current_sub_location = None
         player.combat_buffs = {}
         return player
 
@@ -131,6 +218,7 @@ class Enemy:
         self.max_hp = enemy_data['hp']
         self.attack = enemy_data['attack']
         self.drops = enemy_data.get('drops', [])
+        self.silver_drop = enemy_data.get('silver_drop', [0, 0])
 
 
 class Location:
@@ -243,6 +331,12 @@ def combat(player, enemy_name):
 
             if enemy.hp <= 0:
                 add_log(f"The {enemy.name} is defeated!")
+                # Silver drop
+                silver_amount = random.randint(enemy.silver_drop[0], enemy.silver_drop[1])
+                if silver_amount > 0:
+                    player.silver += silver_amount
+                    add_log(f"The {enemy.name} dropped {silver_amount} Silver!")
+                # Item drop
                 for drop in enemy.drops:
                     if random.randint(1, 100) <= drop['chance']:
                         item_name = drop['item']
@@ -326,6 +420,10 @@ def check_and_complete_quests(player):
                 player.hp = min(player.max_hp, player.hp + quest_def['reward_hp'])
                 interface.display_message(f"  You restored {quest_def['reward_hp']} HP!",
                                           interface.Colors.BRIGHT_GREEN)
+            if 'reward_silver' in quest_def:
+                player.silver += quest_def['reward_silver']
+                interface.display_message(f"  You received {quest_def['reward_silver']} Silver!",
+                                          interface.Colors.BRIGHT_YELLOW)
             if 'reward_skill' in quest_def:
                 for skill, value in quest_def['reward_skill'].items():
                     if skill in player.skills:
@@ -347,7 +445,6 @@ def check_and_complete_quests(player):
                         player.hp += increase
                         interface.display_message(f"  Your maximum HP has permanently increased by {increase}!",
                                                   f"{interface.Colors.BOLD}{interface.Colors.BRIGHT_MAGENTA}")
-
 
             player.completed_quests.append(quest_name)
             quests_to_remove.append(quest_name)
@@ -435,9 +532,77 @@ def heal_player(player):
         interface.display_message(heal_message, interface.Colors.BRIGHT_GREEN, wait_for_key=True)
 
 
-def explore(player):
+def handle_shop(player, merchant_name):
+    while True:
+        interface.tui.clear_screen()
+        title = f"Trade with {merchant_name}"
+        header = f"You have {player.silver} Silver."
+        choice = interface.tui.menu(title, ["Buy", "Sell", "Leave"], header_text=header)
+
+        if choice == "Buy":
+            buy_options = []
+            for item_name in MERCHANT_STOCK:
+                price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0)
+                buy_options.append(f"{item_name} ({price}S)")
+            item_choice_str = interface.select_from_list("Buy Items", buy_options, f"You have {player.silver}S")
+
+            if item_choice_str:
+                item_name = item_choice_str.split(' (')[0]
+                price = ITEM_DEFINITIONS[item_name]['value']
+                if player.silver >= price:
+                    player.silver -= price
+                    player.inventory.append(item_name)
+                    interface.display_message(f"You bought a {item_name} for {price}S.", wait_for_key=True)
+                else:
+                    interface.display_message("You don't have enough Silver.", wait_for_key=True)
+
+        elif choice == "Sell":
+            sellable_items = [item for item in player.inventory if not ITEM_DEFINITIONS.get(item, {}).get('quest_item')]
+            if not sellable_items:
+                interface.display_message("You have nothing to sell.", wait_for_key=True)
+                continue
+
+            sell_options = []
+            for item_name in set(sellable_items):
+                count = sellable_items.count(item_name)
+                price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0) // 2  # Sell for half price
+                sell_options.append(f"{item_name} x{count} ({price}S each)")
+
+            item_choice_str = interface.select_from_list("Sell Items", sell_options, f"You have {player.silver}S")
+            if item_choice_str:
+                item_name = item_choice_str.split(' x')[0]
+                price = ITEM_DEFINITIONS[item_name]['value'] // 2
+                player.silver += price
+                player.inventory.remove(item_name)
+                interface.display_message(f"You sold a {item_name} for {price}S.", wait_for_key=True)
+
+        elif choice == "Leave" or choice is None:
+            break
+
+
+def handle_inn(player, innkeeper_name):
+    cost = 15
+    title = f"The Rusty Flagon Inn"
+    header = f"A room for the night costs {cost} Silver. It will fully restore your health."
+    options = [f"Rest for the night ({cost}S)", "Leave"]
+    choice = interface.tui.menu(title, options, header_text=header)
+
+    if choice == options[0]:
+        if player.hp == player.max_hp:
+            interface.display_message("You are already fully healed.", wait_for_key=True)
+        elif player.silver >= cost:
+            player.silver -= cost
+            player.hp = player.max_hp
+            interface.display_message("You feel well-rested and ready for a new day. (HP fully restored)",
+                                      wait_for_key=True)
+        else:
+            interface.display_message("You can't afford a room.", wait_for_key=True)
+
+
+def wilderness_sequence(player):
     location = generate_location()
     player.location = location.name
+    player.current_sub_location = None
 
     check_and_complete_quests(player)
 
@@ -489,6 +654,80 @@ def explore(player):
             save_game(player)
 
 
+def safe_zone_sequence(player, city_name):
+    city_data = SAFE_LOCATIONS[city_name]
+    player.location = city_name
+    if player.current_sub_location is None:
+        player.current_sub_location = city_data["entry_point"]
+
+    check_and_complete_quests(player)
+
+    while True:
+        action, target = interface.prompt_safe_action(player, city_name, city_data, player.current_sub_location,
+                                                      MERCHANT_NPCS, INNKEEPER_NPCS)
+
+        if action is None:
+            interface.display_header("Farewell, Adventurer!")
+            sys.exit()
+
+        if action == "talk":
+            npc_data = NPCS.get(target, {"dialogue": ["..."]})
+            dialogue = random.choice(npc_data["dialogue"])
+            interface.display_message(f"[{target}] says: \"{dialogue}\"", wait_for_key=True)
+        elif action == "trade":
+            handle_shop(player, target)
+        elif action == "rest":
+            handle_inn(player, target)
+        elif action == "move":
+            player.current_sub_location = target
+            interface.display_message(f"You walk over to the {target}...", wait_for_key=False)
+            time.sleep(3)
+        elif action == "view_status":
+            interface.display_status(player)
+        elif action == "eat_an_item":
+            heal_player(player)
+        elif action == "view_quests":
+            choose_quest(player)
+        elif action == "save_game":
+            save_game(player)
+        elif action == "leave":
+            player.current_sub_location = None
+            interface.display_message(f"You leave the safety of {city_name} and venture back into the wilds.",
+                                      wait_for_key=True)
+            return
+
+
+def rare_location_sequence(player, location_name):
+    location_data = RARE_LOCATIONS[location_name]
+    player.location = location_name
+    player.current_sub_location = None
+
+    item_available = True
+
+    while True:
+        action, target = interface.prompt_rare_action(player, location_name, location_data, item_available)
+
+        if action is None:
+            interface.display_header("Farewell, Adventurer!")
+            sys.exit()
+
+        if action == "talk":
+            npc_data = NPCS.get(target, {"dialogue": ["..."]})
+            dialogue = random.choice(npc_data["dialogue"])
+            interface.display_message(f"[{target}] says: \"{dialogue}\"", wait_for_key=True)
+
+        elif action == "take_item":
+            item_name = location_data["items"][0]
+            player.inventory.append(item_name)
+            interface.display_message(f"You take the {item_name} from beside the fire. It might be useful.",
+                                      interface.Colors.BRIGHT_GREEN, wait_for_key=True)
+            item_available = False
+
+        elif action == "leave":
+            interface.display_message(f"You thank the wanderer and continue on your journey.", wait_for_key=True)
+            return
+
+
 def main():
     handle_updates()
     player = None
@@ -508,9 +747,37 @@ def main():
     interface.display_header(f"Welcome, {player.name}!")
     interface.display_message("Your journey begins...", wait_for_key=True)
 
+    # --- Main Game Loop ---
+
+    turns_in_wilderness = 0
+    MIN_CITY_TURNS = 5
+    CITY_CHANCE = 0.25
+
+    MIN_RARE_TURNS = 10
+    RARE_CHANCE = 0.1
+
+    if player.location in SAFE_LOCATIONS:
+        safe_zone_sequence(player, player.location)
+        turns_in_wilderness = 0
+    elif player.location in RARE_LOCATIONS:
+        rare_location_sequence(player, player.location)
+        turns_in_wilderness = 0
+    else:
+        wilderness_sequence(player)
+        turns_in_wilderness = 1
+
     try:
         while True:
-            explore(player)
+            # The order of these checks is important: check for the rarest event first.
+            if turns_in_wilderness >= MIN_RARE_TURNS and random.random() < RARE_CHANCE:
+                rare_location_sequence(player, "Wanderer's Campfire")
+                turns_in_wilderness = 0
+            elif turns_in_wilderness >= MIN_CITY_TURNS and random.random() < CITY_CHANCE:
+                safe_zone_sequence(player, "Aberfeld")
+                turns_in_wilderness = 0
+            else:
+                wilderness_sequence(player)
+                turns_in_wilderness += 1
     finally:
         interface.tui.cleanup_tui()
 

@@ -51,16 +51,60 @@ def format_location(location):
     return "\n".join(lines)
 
 
+def format_sub_location(city_name, sub_location_name, sub_location_data):
+    border = f"{Colors.BLUE}~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~{Colors.ENDC}"
+    title = f"{Colors.BOLD}{Colors.BRIGHT_CYAN}◇ {city_name} ~ {sub_location_name} ◇{Colors.ENDC}"
+
+    lines = [border, title.center(65), border]
+    wrapped_desc = textwrap.wrap(sub_location_data['description'], width=55)
+    for line in wrapped_desc:
+        lines.append(f"{Colors.CYAN}{line.center(55)}{Colors.ENDC}")
+    lines.append("")
+
+    if sub_location_data['npcs']:
+        lines.append(f"{Colors.WHITE}Around the area, you see:{Colors.ENDC}")
+        for npc in sub_location_data['npcs']:
+            lines.append(f"  - {Colors.BRIGHT_YELLOW}{npc}{Colors.ENDC}")
+
+    return "\n".join(lines)
+
+
+def format_rare_location(location_name, location_data, item_available):
+    border = f"{Colors.YELLOW}-------------------------------------------------------{Colors.ENDC}"
+    title = f"{Colors.BOLD}{Colors.BRIGHT_YELLOW}*** {location_name} ***{Colors.ENDC}"
+
+    lines = [border, title.center(65), border]
+    wrapped_desc = textwrap.wrap(location_data['description'], width=55)
+    for line in wrapped_desc:
+        lines.append(f"{Colors.BRIGHT_YELLOW}{line.center(55)}{Colors.ENDC}")
+    lines.append("")
+
+    if location_data['npcs']:
+        lines.append(f"{Colors.WHITE}You see a lone figure:{Colors.ENDC}")
+        lines.append(f"  - {Colors.BRIGHT_YELLOW}{location_data['npcs'][0]}{Colors.ENDC}")
+    if item_available and location_data['items']:
+        lines.append(f"\n{Colors.WHITE}Resting by the fire is:{Colors.ENDC}")
+        lines.append(f"  - {Colors.BRIGHT_GREEN}{location_data['items'][0]}{Colors.ENDC}")
+
+    return "\n".join(lines)
+
+
 def display_status(player):
     tui.clear_screen()
     print(f"\n{Colors.BOLD}{Colors.BRIGHT_MAGENTA}--- {player.name}'s Status ---{Colors.ENDC}")
     print(f"  HP: {Colors.BRIGHT_GREEN}{player.hp}/{player.max_hp}{Colors.ENDC}")
+    print(f"  Silver: {Colors.BRIGHT_YELLOW}{player.silver}S{Colors.ENDC}")
     inventory_str = ', '.join(player.inventory) or 'Empty'
     print(f"  Inventory: {Colors.BRIGHT_BLUE}{inventory_str}{Colors.ENDC}")
     print(f"  Skills:")
     for skill, value in player.skills.items():
         print(f"    - {skill}: {Colors.BRIGHT_CYAN}{value}{Colors.ENDC}")
-    print(f"  Location: {Colors.BRIGHT_BLUE}{player.location}{Colors.ENDC}")
+
+    location_display = player.location
+    if player.current_sub_location:
+        location_display += f" ({player.current_sub_location})"
+    print(f"  Location: {Colors.BRIGHT_BLUE}{location_display}{Colors.ENDC}")
+
     print(f"  {Colors.BOLD}Active Quests:{Colors.ENDC}")
     if player.current_quests:
         for quest_name, quest_def in player.get_current_quest_details():
@@ -136,6 +180,85 @@ def prompt_action(player, location):
         options=actions,
         header_text=location_header
     )
+
+
+def prompt_safe_action(player, city_name, city_data, sub_location_name, merchant_npcs, innkeeper_npcs):
+    sub_location = city_data["sub_locations"][sub_location_name]
+    header = format_sub_location(city_name, sub_location_name, sub_location)
+    option_map = {}
+    options = []
+
+    # NPC-specific actions
+    for npc_name in sub_location.get("npcs", []):
+        options.append(f"Talk to {npc_name}")
+        option_map[f"Talk to {npc_name}"] = ("talk", npc_name)
+
+        if npc_name in merchant_npcs:
+            options.append(f"Trade with {npc_name}")
+            option_map[f"Trade with {npc_name}"] = ("trade", npc_name)
+        if npc_name in innkeeper_npcs:
+            options.append(f"Rest at the inn (15 Silver)")
+            option_map[f"Rest at the inn (15 Silver)"] = ("rest", npc_name)
+
+    # Move actions
+    for other_sub_loc in city_data["sub_locations"]:
+        if other_sub_loc != sub_location_name:
+            option_text = f"Go to the {other_sub_loc}"
+            options.append(option_text)
+            option_map[option_text] = ("move", other_sub_loc)
+
+    # General actions
+    general_actions = ["View Status", "Eat an item", "View Quests", "Save Game"]
+    for action in general_actions:
+        options.append(action)
+        option_map[action] = (action.lower().replace(" ", "_"), None)
+
+    # Leave action
+    leave_text = f"Leave {city_name}"
+    options.append(leave_text)
+    option_map[leave_text] = ("leave", city_name)
+
+    choice = tui.menu(title=f"What will {player.name} do? ({player.silver}S)",
+                      options=options,
+                      header_text=header)
+
+    if choice is None:
+        return None, None
+
+    return option_map.get(choice)
+
+
+def prompt_rare_action(player, location_name, location_data, item_available):
+    header = format_rare_location(location_name, location_data, item_available)
+    option_map = {}
+    options = []
+
+    # Talk action
+    npc_name = location_data["npcs"][0]
+    talk_text = f"Talk to the {npc_name}"
+    options.append(talk_text)
+    option_map[talk_text] = ("talk", npc_name)
+
+    # Take item action
+    if item_available and location_data["items"]:
+        item_name = location_data["items"][0]
+        take_text = f"Take the {item_name}"
+        options.append(take_text)
+        option_map[take_text] = ("take_item", item_name)
+
+    # Leave action
+    leave_text = "Leave the campfire"
+    options.append(leave_text)
+    option_map[leave_text] = ("leave", None)
+
+    choice = tui.menu(title=f"What will {player.name} do?",
+                      options=options,
+                      header_text=header)
+
+    if choice is None:
+        return None, None
+
+    return option_map.get(choice)
 
 
 # --- Combat Interface ---
