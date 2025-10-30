@@ -1,4 +1,4 @@
-# ver.0.3.0-alpha2
+# ver.0.3.0-beta1
 
 import random
 import sys
@@ -7,6 +7,7 @@ import os
 import interface
 import time
 import updater
+import math
 
 
 def handle_updates():
@@ -40,6 +41,18 @@ EDIBLE_ITEMS = [item_name for item_name, props in ITEM_DEFINITIONS.items() if pr
 ALL_POSSIBLE_ITEMS = list(ITEM_DEFINITIONS.keys())
 SPAWNABLE_ITEMS = [name for name, props in ITEM_DEFINITIONS.items() if props.get("spawnable", True)]
 ALL_POSSIBLE_ENEMIES = list(ENEMY_DEFINITIONS.keys())
+
+# Items that merchants will always stock
+BASE_MERCHANT_STOCK = ["Potion", "Torch", "Whetstone", "Fire Bomb", "Traveler's Rations"]
+
+# Items that can be part of the "rotating" stock
+MERCHANT_WARES = [
+    item for item, props in ITEM_DEFINITIONS.items()
+    if props.get('value', 0) > 0 and not props.get('quest_item') and item not in BASE_MERCHANT_STOCK
+]
+
+# Holds the current state of all merchants (capital, stock, etc.)
+MERCHANT_DATA = {}
 
 SAFE_LOCATIONS = {
     "Aberfeld": {
@@ -121,7 +134,76 @@ NPCS = {
 
 MERCHANT_NPCS = ["Traveling Merchant"]
 INNKEEPER_NPCS = ["Innkeeper"]
-MERCHANT_STOCK = ["Potion", "Torch", "Whetstone", "Fire Bomb", "Traveler's Rations"]
+
+
+def initialize_merchants():
+    """Sets up the initial state for all merchants in the game."""
+    global MERCHANT_DATA
+    for merchant_name in MERCHANT_NPCS:
+        MERCHANT_DATA[merchant_name] = {
+            "silver": 500,  # Starting capital
+            "stock": []
+        }
+        refresh_merchant_stock(merchant_name)
+
+
+def refresh_merchant_stock(merchant_name):
+    if merchant_name not in MERCHANT_DATA:
+        return
+
+    MERCHANT_DATA[merchant_name]["silver"] = random.randint(400, 700)
+
+    new_stock = list(BASE_MERCHANT_STOCK)
+
+    num_random_items = random.randint(3, 8)
+    if MERCHANT_WARES:
+        for _ in range(num_random_items):
+            new_stock.append(random.choice(MERCHANT_WARES))
+
+    # Add a few more consumables
+    for _ in range(random.randint(5, 10)):
+        new_stock.append("Potion")
+    for _ in range(random.randint(3, 6)):
+        new_stock.append("Traveler's Rations")
+
+    MERCHANT_DATA[merchant_name]["stock"] = new_stock
+
+
+def get_buy_price(item_name, player_wisdom, merchant_stock):
+    """
+    Calculates the price for the player to BUY an item.
+    - Price increases as stock count decreases (Supply/Demand).
+    - Price decreases as player Wisdom increases (Haggling).
+    """
+    base_price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0)
+    stock_count = merchant_stock.count(item_name)
+
+    # Demand modifier: Price increases as stock gets lower (max +50%)
+    demand_mod = 1.0 + max(0, 10 - stock_count) * 0.05
+    # Haggling modifier: Price decreases with wisdom (max 25% discount)
+    haggling_mod = 1.0 - min(0.25, (player_wisdom * 0.015))
+
+    final_price = int(math.ceil(base_price * demand_mod * haggling_mod))
+    return max(1, final_price)
+
+
+def get_sell_price(item_name, player_wisdom, merchant_stock):
+    """
+    Calculates the price for the player to SELL an item.
+    - Price decreases as stock count increases (Supply/Demand).
+    - Price increases as player Wisdom increases (Haggling).
+    """
+    base_price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0)
+    stock_count = merchant_stock.count(item_name)
+
+    # Supply modifier: Price decreases as stock gets higher (base 50% value)
+    supply_mod = 0.5 / (1 + stock_count * 0.1)
+    # Haggling modifier: Sell price increases with wisdom (max 75% of base value)
+    haggling_mod = 1.0 + min(0.5, (player_wisdom * 0.03))
+
+    final_price = int(base_price * supply_mod * haggling_mod)
+    return max(0, final_price)
+
 
 class Player:
     def __init__(self, name="Adventurer"):
@@ -139,6 +221,7 @@ class Player:
         self.items_gathered = {}
         self.has_wisdom_buff = False
         self.combat_buffs = {}
+        self.quest_flags = {}
 
     def get_combat_items(self):
         combat_items = []
@@ -176,12 +259,24 @@ class Player:
             return ""
 
         progress = ""
-        if quest_def['type'] == "defeat_enemies":
+        q_type = quest_def['type']
+
+        if q_type == "defeat_enemies" or q_type == "report":
             current = self.enemies_defeated.get(quest_def['target_enemy'], 0)
             progress = f" ({current}/{quest_def['target_count']})"
-        elif quest_def['type'] == "gather_items":
-            current = self.items_gathered.get(quest_def['target_item'], 0)
+        elif q_type == "gather_items" or q_type == "fetch":
+            if q_type == "fetch":
+                current = self.inventory.count(quest_def['target_item'])
+            else:
+                current = self.items_gathered.get(quest_def['target_item'], 0)
             progress = f" ({current}/{quest_def['target_count']})"
+        elif q_type == "delivery":
+            item = quest_def['delivery_item']
+            if item in self.inventory:
+                progress = " (Item in inventory)"
+            else:
+                progress = " (Item lost?)"
+
         return progress
 
     def to_dict(self):
@@ -206,6 +301,8 @@ class Player:
             player.has_wisdom_buff = False
         if 'current_sub_location' not in data:
             player.current_sub_location = None
+        if 'quest_flags' not in data:
+            player.quest_flags = {}
         player.combat_buffs = {}
         return player
 
@@ -373,8 +470,12 @@ def combat(player, enemy_name):
 
 
 def choose_quest(player):
-    available_quests = [q for q in QUEST_DEFINITIONS if
-                        q not in player.current_quests and q not in player.completed_quests]
+    available_quests = [
+        q for q in QUEST_DEFINITIONS
+        if q not in player.current_quests
+        and q not in player.completed_quests
+        and 'giver_npc' not in QUEST_DEFINITIONS[q]
+    ]
 
     if not available_quests:
         interface.display_message("No new quests available at the moment.", interface.Colors.BRIGHT_BLUE,
@@ -387,9 +488,161 @@ def choose_quest(player):
 
     if choice_desc:
         quest_name = choice_desc.split(':')[0]
-        player.current_quests.append(quest_name)
-        interface.display_message(f"Quest Accepted: {quest_name}!", interface.Colors.BRIGHT_GREEN,
+        handle_quest_acceptance(player, quest_name)
+
+
+def is_quest_eligible(player, quest_name):
+    """Checks if a player can start a specific quest."""
+    if quest_name in player.current_quests or quest_name in player.completed_quests:
+        return False
+
+    quest_def = QUEST_DEFINITIONS.get(quest_name, {})
+    prereq = quest_def.get('prerequisite_quest')
+
+    if prereq and prereq not in player.completed_quests:
+        return False
+
+    return True
+
+
+def check_quest_completion_status(player, quest_name):
+    quest_def = QUEST_DEFINITIONS.get(quest_name)
+    if not quest_def:
+        return False
+
+    q_type = quest_def['type']
+    if q_type == "report":
+        return player.enemies_defeated.get(quest_def['target_enemy'], 0) >= quest_def['target_count']
+    elif q_type == "fetch":
+        return player.inventory.count(quest_def['target_item']) >= quest_def['target_count']
+    elif q_type == "delivery":
+        return quest_def['delivery_item'] in player.inventory
+    elif q_type == "item_find":
+        return quest_def['target_item'] in player.inventory
+    elif q_type == "reach_location":
+        return player.location == quest_def['target_location']
+    elif q_type == "defeat_enemies":
+        return player.enemies_defeated.get(quest_def['target_enemy'], 0) >= quest_def['target_count']
+    elif q_type == "gather_items":
+        return player.items_gathered.get(quest_def['target_item'], 0) >= quest_def['target_count']
+
+    return False
+
+
+def get_npc_quest_statuses(player, npc_list):
+    """
+    Checks all NPCs in the list for their quest status relative to the player.
+    Returns a dictionary: {"NPC Name": ("status", "quest_name")}
+    Status can be: "complete", "available", or "talk"
+    """
+    statuses = {}
+
+    # First pass: Check for quests to complete
+    for quest_name in player.current_quests:
+        quest_def = QUEST_DEFINITIONS[quest_name]
+        turn_in_npc = quest_def.get('turn_in_npc')
+
+        if turn_in_npc and turn_in_npc in npc_list:
+            if check_quest_completion_status(player, quest_name):
+                statuses[turn_in_npc] = ("complete", quest_name)
+                continue
+
+    # Second pass: Check for new available quests
+    for npc_name in npc_list:
+        if npc_name in statuses:
+            continue
+
+        statuses[npc_name] = ("talk", None) # Default
+        for quest_name, quest_def in QUEST_DEFINITIONS.items():
+            if quest_def.get('giver_npc') == npc_name:
+                if is_quest_eligible(player, quest_name):
+                    statuses[npc_name] = ("available", quest_name)
+                    break
+
+    return statuses
+
+
+def handle_quest_acceptance(player, quest_name):
+    quest_def = QUEST_DEFINITIONS[quest_name]
+    player.current_quests.append(quest_name)
+
+    if quest_def.get('type') == 'delivery':
+        item = quest_def.get('delivery_item')
+        if item:
+            player.inventory.append(item)
+            interface.display_message(f"You received {item} for delivery.",
+                                      interface.Colors.BRIGHT_GREEN, wait_for_key=False)
+
+    interface.display_message(f"Quest Accepted: {quest_name}!",
+                              interface.Colors.BRIGHT_GREEN, wait_for_key=True)
+
+
+def handle_quest_turn_in(player, npc_name):
+    quest_to_complete = None
+    for quest_name in player.current_quests:
+        quest_def = QUEST_DEFINITIONS[quest_name]
+        if quest_def.get('turn_in_npc') == npc_name and check_quest_completion_status(player, quest_name):
+            quest_to_complete = quest_name
+            break
+
+    if not quest_to_complete:
+        interface.display_message(f"[{npc_name}] says: \"You haven't finished my task yet.\"",
                                   wait_for_key=True)
+        return
+
+    quest_def = QUEST_DEFINITIONS[quest_to_complete]
+
+    # Display Rewards
+    interface.tui.clear_screen()
+    interface.display_message(f"QUEST COMPLETED: {quest_to_complete}!",
+                              f"{interface.Colors.BOLD}{interface.Colors.BRIGHT_GREEN}")
+
+    if 'reward_hp' in quest_def:
+        player.hp = min(player.max_hp, player.hp + quest_def['reward_hp'])
+        interface.display_message(f"  You restored {quest_def['reward_hp']} HP!",
+                                  interface.Colors.BRIGHT_GREEN)
+    if 'reward_silver' in quest_def:
+        player.silver += quest_def['reward_silver']
+        interface.display_message(f"  You received {quest_def['reward_silver']} Silver!",
+                                  interface.Colors.BRIGHT_YELLOW)
+    if 'reward_skill' in quest_def:
+        for skill, value in quest_def['reward_skill'].items():
+            if skill in player.skills:
+                player.skills[skill] += value
+                interface.display_message(f"  Your {skill} increased by {value}!",
+                                          interface.Colors.BRIGHT_CYAN)
+    if 'reward_item' in quest_def:
+        reward_item_name = quest_def['reward_item']
+        player.inventory.append(reward_item_name)
+        interface.display_message(f"  You received {reward_item_name}!",
+                                  interface.Colors.BRIGHT_GREEN)
+
+        item_def = ITEM_DEFINITIONS.get(reward_item_name, {})
+        if 'permanent_effect' in item_def:
+            effect = item_def['permanent_effect']
+            if 'max_hp_increase' in effect:
+                increase = effect['max_hp_increase']
+                player.max_hp += increase
+                player.hp += increase
+                interface.display_message(f"  Your maximum HP has permanently increased by {increase}!",
+                                          f"{interface.Colors.BOLD}{interface.Colors.BRIGHT_MAGENTA}")
+
+    # Clean up quest items and state
+    player.completed_quests.append(quest_to_complete)
+    player.current_quests.remove(quest_to_complete)
+
+    q_type = quest_def['type']
+    if q_type == "report":
+        player.enemies_defeated[quest_def['target_enemy']] = 0  # Reset progress
+    elif q_type == "fetch":
+        for _ in range(quest_def['target_count']):
+            if quest_def['target_item'] in player.inventory:
+                player.inventory.remove(quest_def['target_item'])
+    elif q_type == "delivery":
+        if quest_def['delivery_item'] in player.inventory:
+            player.inventory.remove(quest_def['delivery_item'])
+
+    interface.display_message("", wait_for_key=True)
 
 
 def check_and_complete_quests(player):
@@ -399,17 +652,11 @@ def check_and_complete_quests(player):
         if not quest_def:
             continue
 
-        completed = False
-        if quest_def['type'] == "defeat_enemies" and player.enemies_defeated.get(quest_def['target_enemy'], 0) >= \
-            quest_def['target_count']:
-            completed = True
-        elif quest_def['type'] == "gather_items" and player.items_gathered.get(quest_def['target_item'], 0) >= \
-            quest_def['target_count']:
-            completed = True
-        elif quest_def['type'] == "item_find" and quest_def['target_item'] in player.inventory:
-            completed = True
-        elif quest_def['type'] == "reach_location" and player.location == quest_def['target_location']:
-            completed = True
+        # Skip quests that require NPC turn-in
+        if 'turn_in_npc' in quest_def:
+            continue
+
+        completed = check_quest_completion_status(player, quest_name)
 
         if completed:
             interface.tui.clear_screen()
@@ -475,8 +722,12 @@ def save_game(player):
 
     full_filename = f"save_{filename_input}.json"
     try:
+        save_data = {
+            "player_data": player.to_dict(),
+            "merchant_data": MERCHANT_DATA
+        }
         with open(full_filename, "w") as f:
-            json.dump(player.to_dict(), f, indent=2)
+            json.dump(save_data, f, indent=2)
         interface.display_message(f"Game saved to {full_filename}", interface.Colors.BRIGHT_GREEN,
                                   wait_for_key=True)
     except IOError:
@@ -497,7 +748,18 @@ def load_game():
         try:
             with open(f"save_{choice}.json", "r") as f:
                 data = json.load(f)
-            return Player.from_dict(data)
+
+            if "player_data" in data:
+                player = Player.from_dict(data['player_data'])
+                if "merchant_data" in data:
+                    global MERCHANT_DATA
+                    MERCHANT_DATA = data['merchant_data']
+                else:
+                    initialize_merchants()
+                return player
+            else:
+                return Player.from_dict(data)
+
         except (IOError, json.JSONDecodeError):
             interface.display_message(f"Error loading save file {choice}.", interface.Colors.BRIGHT_RED,
                                       wait_for_key=True)
@@ -533,25 +795,40 @@ def heal_player(player):
 
 
 def handle_shop(player, merchant_name):
+    merchant = MERCHANT_DATA[merchant_name]
+    player_wisdom = player.skills.get("Wisdom", 3)
+
     while True:
         interface.tui.clear_screen()
         title = f"Trade with {merchant_name}"
-        header = f"You have {player.silver} Silver."
+        header = (f"Your Silver: {player.silver}S\n"
+                  f"{merchant_name}'s Silver: {merchant['silver']}S\n"
+                  f"Your Wisdom ({player_wisdom}) is affecting prices.")
         choice = interface.tui.menu(title, ["Buy", "Sell", "Leave"], header_text=header)
 
         if choice == "Buy":
+            if not merchant['stock']:
+                interface.display_message("I'm sold out of everything right now.", wait_for_key=True)
+                continue
+
             buy_options = []
-            for item_name in MERCHANT_STOCK:
-                price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0)
-                buy_options.append(f"{item_name} ({price}S)")
-            item_choice_str = interface.select_from_list("Buy Items", buy_options, f"You have {player.silver}S")
+            for item_name in sorted(list(set(merchant['stock']))):
+                price = get_buy_price(item_name, player_wisdom, merchant['stock'])
+                count = merchant['stock'].count(item_name)
+                buy_options.append(f"{item_name} x{count} ({price}S each)")
+
+            item_choice_str = interface.select_from_list("Buy Items", buy_options,
+                                                         f"You have {player.silver}S")
 
             if item_choice_str:
-                item_name = item_choice_str.split(' (')[0]
-                price = ITEM_DEFINITIONS[item_name]['value']
+                item_name = item_choice_str.split(' x')[0]
+                price = get_buy_price(item_name, player_wisdom, merchant['stock'])
+
                 if player.silver >= price:
                     player.silver -= price
+                    merchant['silver'] += price
                     player.inventory.append(item_name)
+                    merchant['stock'].remove(item_name)
                     interface.display_message(f"You bought a {item_name} for {price}S.", wait_for_key=True)
                 else:
                     interface.display_message("You don't have enough Silver.", wait_for_key=True)
@@ -563,18 +840,33 @@ def handle_shop(player, merchant_name):
                 continue
 
             sell_options = []
-            for item_name in set(sellable_items):
+            for item_name in sorted(list(set(sellable_items))):
+                price = get_sell_price(item_name, player_wisdom, merchant['stock'])
                 count = sellable_items.count(item_name)
-                price = ITEM_DEFINITIONS.get(item_name, {}).get('value', 0) // 2  # Sell for half price
                 sell_options.append(f"{item_name} x{count} ({price}S each)")
 
-            item_choice_str = interface.select_from_list("Sell Items", sell_options, f"You have {player.silver}S")
+            item_choice_str = interface.select_from_list("Sell Items", sell_options,
+                                                         f"{merchant_name} has {merchant['silver']}S")
             if item_choice_str:
                 item_name = item_choice_str.split(' x')[0]
-                price = ITEM_DEFINITIONS[item_name]['value'] // 2
-                player.silver += price
-                player.inventory.remove(item_name)
-                interface.display_message(f"You sold a {item_name} for {price}S.", wait_for_key=True)
+                price = get_sell_price(item_name, player_wisdom, merchant['stock'])
+
+                if price == 0:
+                    interface.display_message(
+                        f"The market is flooded. {merchant_name} won't pay for {item_name}.",
+                        wait_for_key=True)
+                    continue
+
+                if merchant['silver'] >= price:
+                    player.silver += price
+                    merchant['silver'] -= price
+                    player.inventory.remove(item_name)
+                    merchant['stock'].append(item_name)
+                    interface.display_message(f"You sold a {item_name} for {price}S.",
+                                              wait_for_key=True)
+                else:
+                    interface.display_message(f"{merchant_name} doesn't have enough Silver to buy that.",
+                                              wait_for_key=True)
 
         elif choice == "Leave" or choice is None:
             break
@@ -648,7 +940,7 @@ def wilderness_sequence(player):
             heal_player(player)
 
         elif action == "View Quests":
-            choose_quest(player)
+            interface.display_status(player)
 
         elif action == "Save Game":
             save_game(player)
@@ -660,11 +952,25 @@ def safe_zone_sequence(player, city_name):
     if player.current_sub_location is None:
         player.current_sub_location = city_data["entry_point"]
 
-    check_and_complete_quests(player)
+    # Refresh merchant stock when player arrives
+    for merchant_name in MERCHANT_NPCS:
+        if merchant_name in NPCS:
+             refresh_merchant_stock(merchant_name)
+    interface.display_message(f"You hear the merchants in the Market Square setting out new wares.",
+                              wait_for_key=False)
+    time.sleep(2)
+
+    check_and_complete_quests(player) # Check auto-complete quests
 
     while True:
-        action, target = interface.prompt_safe_action(player, city_name, city_data, player.current_sub_location,
-                                                      MERCHANT_NPCS, INNKEEPER_NPCS)
+        current_sub_loc_data = city_data["sub_locations"][player.current_sub_location]
+        npcs_in_area = current_sub_loc_data.get("npcs", [])
+        quest_statuses = get_npc_quest_statuses(player, npcs_in_area)
+
+        action, target = interface.prompt_safe_action(
+            player, city_name, city_data, player.current_sub_location,
+            MERCHANT_NPCS, INNKEEPER_NPCS, quest_statuses  # Pass new statuses
+        )
 
         if action is None:
             interface.display_header("Farewell, Adventurer!")
@@ -674,6 +980,21 @@ def safe_zone_sequence(player, city_name):
             npc_data = NPCS.get(target, {"dialogue": ["..."]})
             dialogue = random.choice(npc_data["dialogue"])
             interface.display_message(f"[{target}] says: \"{dialogue}\"", wait_for_key=True)
+
+        elif action == "accept_quest":
+            quest_name = quest_statuses[target][1]
+            quest_def = QUEST_DEFINITIONS[quest_name]
+            # Show quest acceptance screen
+            header = f"{target} wants to talk to you..."
+            prompt = (f"\"{quest_def['description']}\"\n\n"
+                      f"{interface.Colors.BRIGHT_YELLOW}Accept this quest?{interface.Colors.ENDC}")
+            choice = interface.tui.menu(quest_name, ["Accept", "Decline"], header_text=header, prompt=prompt)
+            if choice == "Accept":
+                handle_quest_acceptance(player, quest_name)
+
+        elif action == "complete_quest":
+            handle_quest_turn_in(player, target)
+
         elif action == "trade":
             handle_shop(player, target)
         elif action == "rest":
@@ -687,7 +1008,7 @@ def safe_zone_sequence(player, city_name):
         elif action == "eat_an_item":
             heal_player(player)
         elif action == "view_quests":
-            choose_quest(player)
+            interface.display_status(player)
         elif action == "save_game":
             save_game(player)
         elif action == "leave":
@@ -732,6 +1053,7 @@ def main():
     handle_updates()
     player = None
     interface.tui.clear_screen()
+    initialize_merchants()
 
     while player is None:
         choice = interface.prompt_new_or_load()
@@ -740,6 +1062,7 @@ def main():
         elif choice == 'n':
             name = interface.prompt_for_name()
             player = Player(name)
+            initialize_merchants()
         elif choice is None:
             interface.display_header("Farewell!")
             sys.exit()

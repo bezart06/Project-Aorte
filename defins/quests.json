@@ -92,5 +92,36 @@
     "reward_skill": {"Strength": 2},
     "reward_item": "Heartstone of Endurance",
     "reward_silver": 0
+  },
+  "The Blacksmith's Need": {
+    "description": "The Local Blacksmith needs materials. Gather 5 Spider Silks and bring them back to him.",
+    "type": "fetch",
+    "giver_npc": "Local Blacksmith",
+    "turn_in_npc": "Local Blacksmith",
+    "target_item": "Spider Silk",
+    "target_count": 5,
+    "reward_item": "Whetstone",
+    "reward_silver": 60
+  },
+  "Guard Duty": {
+    "description": "A Vigilant Guard is concerned about Bandits on the roads. Defeat 3 Bandits and report back.",
+    "type": "report",
+    "giver_npc": "Vigilant Guard",
+    "turn_in_npc": "Vigilant Guard",
+    "target_enemy": "Bandit",
+    "target_count": 3,
+    "reward_skill": {"Agility": 1},
+    "reward_item": "Iron Sword",
+    "reward_silver": 100
+  },
+  "Urgent Delivery": {
+    "description": "The Traveling Merchant needs you to deliver an order to the Local Blacksmith in the Market Square.",
+    "type": "delivery",
+    "giver_npc": "Traveling Merchant",
+    "turn_in_npc": "Local Blacksmith",
+    "delivery_item": "Blacksmith's Order",
+    "prerequisite_quest": "The Blacksmith's Need",
+    "reward_skill": {"Agility": 1},
+    "reward_silver": 50
   }
 }

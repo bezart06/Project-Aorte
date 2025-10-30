@@ -51,7 +51,7 @@ def format_location(location):
     return "\n".join(lines)
 
 
-def format_sub_location(city_name, sub_location_name, sub_location_data):
+def format_sub_location(city_name, sub_location_name, sub_location_data, quest_statuses):
     border = f"{Colors.BLUE}~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~{Colors.ENDC}"
     title = f"{Colors.BOLD}{Colors.BRIGHT_CYAN}◇ {city_name} ~ {sub_location_name} ◇{Colors.ENDC}"
 
@@ -64,7 +64,15 @@ def format_sub_location(city_name, sub_location_name, sub_location_data):
     if sub_location_data['npcs']:
         lines.append(f"{Colors.WHITE}Around the area, you see:{Colors.ENDC}")
         for npc in sub_location_data['npcs']:
-            lines.append(f"  - {Colors.BRIGHT_YELLOW}{npc}{Colors.ENDC}")
+            # Quest markers
+            status, quest_name = quest_statuses.get(npc, ("talk", None))
+            prefix = ""
+            if status == "complete":
+                prefix = f"{Colors.BRIGHT_YELLOW}[!] {Colors.ENDC}"
+            elif status == "available":
+                prefix = f"{Colors.BRIGHT_CYAN}[?] {Colors.ENDC}"
+
+            lines.append(f"  - {prefix}{Colors.BRIGHT_YELLOW}{npc}{Colors.ENDC}")
 
     return "\n".join(lines)
 
@@ -110,6 +118,11 @@ def display_status(player):
         for quest_name, quest_def in player.get_current_quest_details():
             desc = quest_def.get('description', 'No description.')
             progress = player.get_quest_progress(quest_name)
+
+            turn_in_npc = quest_def.get('turn_in_npc')
+            if turn_in_npc:
+                desc += f" (Return to {turn_in_npc})"
+
             print(f"    - {Colors.BRIGHT_YELLOW}{quest_name}{Colors.ENDC}: {desc}{Colors.WHITE}{progress}{Colors.ENDC}")
     else:
         print(f"    {Colors.BRIGHT_BLUE}None{Colors.ENDC}")
@@ -182,16 +195,29 @@ def prompt_action(player, location):
     )
 
 
-def prompt_safe_action(player, city_name, city_data, sub_location_name, merchant_npcs, innkeeper_npcs):
+def prompt_safe_action(player, city_name, city_data, sub_location_name, merchant_npcs, innkeeper_npcs, quest_statuses):
     sub_location = city_data["sub_locations"][sub_location_name]
-    header = format_sub_location(city_name, sub_location_name, sub_location)
+    # Pass quest_statuses to the formatter
+    header = format_sub_location(city_name, sub_location_name, sub_location, quest_statuses)
+
     option_map = {}
     options = []
 
     # NPC-specific actions
     for npc_name in sub_location.get("npcs", []):
-        options.append(f"Talk to {npc_name}")
-        option_map[f"Talk to {npc_name}"] = ("talk", npc_name)
+        status, quest_name = quest_statuses.get(npc_name, ("talk", None))
+
+        # Dynamically create NPC interaction
+        if status == "complete":
+            option_text = f"[!] Complete Quest with {npc_name}"
+            option_map[option_text] = ("complete_quest", npc_name)
+        elif status == "available":
+            option_text = f"[?] Accept Quest from {npc_name}"
+            option_map[option_text] = ("accept_quest", npc_name)
+        else: # "talk"
+            option_text = f"Talk to {npc_name}"
+            option_map[option_text] = ("talk", npc_name)
+        options.append(option_text)
 
         if npc_name in merchant_npcs:
             options.append(f"Trade with {npc_name}")

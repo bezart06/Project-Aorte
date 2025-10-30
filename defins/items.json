@@ -2,81 +2,94 @@
   "Old Coin": {
     "description": "An ancient, tarnished coin.",
     "edible": false,
-    "value": 10
+    "value": 10,
+    "category": "loot"
   },
   "Mystic Herb": {
     "description": "A fragrant herb with strange properties.",
     "edible": true,
     "heal_min": 12,
     "heal_max": 16,
-    "value": 20
+    "value": 20,
+    "category": "consumable"
   },
   "Iron Sword": {
     "description": "A sturdy, well-made iron sword.",
     "edible": false,
-    "value": 100
+    "value": 100,
+    "category": "equipment"
   },
   "Potion": {
     "description": "A glowing liquid that restores health.",
     "edible": true,
     "heal_min": 20,
     "heal_max": 25,
-    "value": 45
+    "value": 45,
+    "category": "consumable"
   },
   "Torch": {
     "description": "A wooden torch, useful for dark places.",
     "edible": false,
-    "value": 8
+    "value": 8,
+    "category": "utility"
   },
   "Map Piece": {
     "description": "A fragment of an old, tattered map.",
     "edible": false,
-    "value": 30
+    "value": 30,
+    "category": "loot"
   },
   "Berries": {
     "description": "Sweet, wild berries.",
     "edible": true,
     "heal_min": 5,
     "heal_max": 10,
-    "value": 4
+    "value": 4,
+    "category": "consumable"
   },
   "Mushroom": {
     "description": "A strangely glowing mushroom.",
     "edible": true,
     "heal_min": 10,
     "heal_max": 15,
-    "value": 6
+    "value": 6,
+    "category": "consumable"
   },
   "Ancient Amulet": {
     "description": "A powerful amulet, pulsating with old magic.",
     "edible": false,
     "spawnable": false,
     "value": 300,
-    "quest_item": true
+    "quest_item": true,
+    "category": "quest"
   },
   "Ancient Tome": {
     "description": "A heavy book filled with forgotten knowledge.",
     "edible": false,
     "spawnable": false,
     "value": 750,
-    "quest_item": true
+    "quest_item": true,
+    "category": "quest"
   },
   "Gold Bar": {
     "description": "A shiny bar of pure gold.",
     "edible": false,
-    "value": 100
+    "value": 100,
+    "category": "loot"
   },
   "Spider Silk": {
     "description": "Strong and sticky spider silk.",
     "edible": false,
-    "value": 10
+    "value": 10,
+    "category": "loot"
   },
   "Rotten Tomato": {
     "description": "Just a rotten tomato.",
     "edible": true,
     "heal_min": -15,
     "heal_max": -5,
-    "value": 1
+    "value": 1,
+    "category": "consumable"
   },
   "Fire Bomb": {
     "description": "A crude explosive that deals fire damage.",
@@ -87,7 +100,8 @@
       "min": 20,
       "max": 30
     },
-    "value": 40
+    "value": 40,
+    "category": "consumable"
   },
   "Smoke Bomb": {
     "description": "Creates a thick cloud of smoke, making you harder to hit.",
@@ -99,7 +113,8 @@
       "amount": 3,
       "duration": "combat"
     },
-    "value": 60
+    "value": 60,
+    "category": "consumable"
   },
   "Stone of Fortitude": {
     "description": "A rock that glows with inner strength.",
@@ -111,14 +126,16 @@
       "amount": 2,
       "duration": "combat"
     },
-    "value": 90
+    "value": 90,
+    "category": "consumable"
   },
   "Traveler's Rations": {
     "description": "A simple but filling meal for a long journey.",
     "edible": true,
     "heal_min": 15,
     "heal_max": 20,
-    "value": 20
+    "value": 20,
+    "category": "consumable"
   },
   "Whetstone": {
     "description": "A rough stone used to sharpen a blade.",
@@ -130,24 +147,28 @@
       "amount": 1,
       "duration": "combat"
     },
-    "value": 25
+    "value": 25,
+    "category": "consumable"
   },
   "Lucky Charm": {
     "description": "A small, four-leaf clover pressed in wax.",
     "edible": false,
     "spawnable": false,
-    "value": 66
+    "value": 66,
+    "category": "loot"
   },
   "Goblin Totem": {
     "description": "A crude totem made of bone and feathers.",
     "edible": false,
     "spawnable": false,
-    "value": 42
+    "value": 42,
+    "category": "loot"
   },
   "Shadow Fern": {
     "description": "A rare fern that grows only in places untouched by sunlight.",
     "edible": false,
-    "value": 25
+    "value": 25,
+    "category": "loot"
   },
   "Heartstone of Endurance": {
     "description": "A crystal that pulses with a steady, life-giving rhythm.",
@@ -157,19 +178,30 @@
       "max_hp_increase": 20
     },
     "value": 2000,
-    "quest_item": true
+    "quest_item": true,
+    "category": "quest"
   },
   "Dire Wolf Pelt": {
     "description": "The thick, durable pelt of a Dire Wolf. Could be useful for crafting.",
     "edible": false,
     "spawnable": false,
-    "value": 60
+    "value": 60,
+    "category": "loot"
   },
   "Dwarf Crown": {
     "description": "A crown fit for a dwarf king, heavy and ornate.",
     "edible": false,
     "spawnable": false,
     "value": 1500,
-    "quest_item": true
+    "quest_item": true,
+    "category": "quest"
+  },
+  "Blacksmith's Order": {
+    "description": "A heavy crate of whetstones and steel ingots, addressed to the Local Blacksmith.",
+    "edible": false,
+    "spawnable": false,
+    "value": 0,
+    "quest_item": true,
+    "category": "quest"
   }
 }

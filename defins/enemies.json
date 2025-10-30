@@ -2,17 +2,17 @@
   "Cave Slime": {
     "hp": 15,
     "attack": 3,
-    "silver_drop": [1, 2]
+    "silver_drop": [0, 1]
   },
   "Goblin": {
     "hp": 30,
     "attack": 5,
-    "silver_drop": [2, 6]
+    "silver_drop": [1, 3]
   },
   "Zombie": {
     "hp": 25,
     "attack": 7,
-    "silver_drop": [2, 5]
+    "silver_drop": [1, 2]
   },
   "Ghost": {
     "hp": 25,
@@ -22,17 +22,17 @@
   "Wolf": {
     "hp": 35,
     "attack": 8,
-    "silver_drop": [4, 8]
+    "silver_drop": [1, 4]
   },
   "Bandit": {
     "hp": 70,
     "attack": 10,
-    "silver_drop": [10, 25]
+    "silver_drop": [5, 12]
   },
   "Skeleton": {
     "hp": 40,
     "attack": 8,
-    "silver_drop": [4, 12]
+    "silver_drop": [2, 6]
   },
   "Spider": {
     "hp": 30,
@@ -40,22 +40,22 @@
     "drops": [
       {"item": "Spider Silk", "chance": 35}
     ],
-    "silver_drop": [3, 8]
+    "silver_drop": [1, 4]
   },
   "Ogre": {
     "hp": 110,
     "attack": 12,
-    "silver_drop": [20, 45]
+    "silver_drop": [10, 22]
   },
   "Dragonling": {
     "hp": 125,
     "attack": 20,
-    "silver_drop": [35, 90]
+    "silver_drop": [15, 45]
   },
   "Hydra": {
     "hp": 200,
     "attack": 25,
-    "silver_drop": [100, 200]
+    "silver_drop": [50, 100]
   },
   "Dire Wolf": {
     "hp": 80,
@@ -63,7 +63,7 @@
     "drops": [
       {"item": "Dire Wolf Pelt", "chance": 40}
     ],
-    "silver_drop": [15, 40]
+    "silver_drop": [8, 20]
   },
   "Goblin Shaman": {
     "hp": 40,
@@ -71,7 +71,7 @@
     "drops": [
       {"item": "Goblin Totem", "chance": 75}
     ],
-    "silver_drop": [10, 25]
+    "silver_drop": [5, 12]
   },
   "Whispering Shade": {
     "hp": 30,
