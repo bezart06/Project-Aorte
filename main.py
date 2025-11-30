@@ -1,4 +1,4 @@
-# ver.0.3.0-beta1
+# ver.0.3.0-hotfix
 
 import random
 import sys
