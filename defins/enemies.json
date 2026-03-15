@@ -50,12 +50,12 @@
   "Dragonling": {
     "hp": 125,
     "attack": 20,
-    "silver_drop": [15, 45]
+    "silver_drop": [35, 55]
   },
   "Hydra": {
     "hp": 200,
     "attack": 25,
-    "silver_drop": [50, 100]
+    "silver_drop": [65, 110]
   },
   "Dire Wolf": {
     "hp": 80,
@@ -63,7 +63,7 @@
     "drops": [
       {"item": "Dire Wolf Pelt", "chance": 40}
     ],
-    "silver_drop": [8, 20]
+    "silver_drop": [15, 30]
   },
   "Goblin Shaman": {
     "hp": 40,

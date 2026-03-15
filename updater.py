@@ -12,7 +12,7 @@ import zipfile
 GITHUB_REPO = "bezart06/Project-Aorte"
 
 API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
-CURRENT_VERSION = "ver.0.3.0-hotfix"
+CURRENT_VERSION = "ver.0.3.1"
 
 
 def parse_to_comparable(version_str):
